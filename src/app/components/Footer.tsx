@@ -10,7 +10,8 @@ export function Footer() {
           <div className="row">
             <div className="col-12 col-md text-center">
               <p className="d-block my-3">
-                Copyright © LiangAcademy.com | All rights reserved. testing123
+                Copyright © www.malaysiablockchaindeveloper | All rights reserved (2025). 
+                (We are the most gengchow blockchain developer in Malaysia.)
               </p>
             </div>
           </div>
