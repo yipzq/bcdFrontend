@@ -17,13 +17,30 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Deposit() {
   const [amount, setAmount] = useState('');
+  const [error, setError] = useState('');
 
   const depositAmount = parseFloat(amount) || 0;
   const processingFee = (depositAmount * 0.02).toFixed(2);
   const totalAmount = (depositAmount + parseFloat(processingFee)).toFixed(2);
+
+  const router = useRouter();
+
+  const handleSubmit = () => {
+    if (depositAmount <= 0) {
+      setError('Please enter a valid amount.');
+      return;
+    }
+
+    // ✅ Store data in localStorage instead of API call
+    localStorage.setItem('totalAmount', totalAmount);
+
+    // ✅ Navigate to confirmation page
+    router.push('/payment');
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -50,10 +67,14 @@ export default function Deposit() {
             <span>{!isNaN(depositAmount) ? totalAmount : '0.00'} USD</span>
           </p>
         </div>
-        <button className="w-full bg-blue-500 text-white mt-4 p-2 rounded font-bold">
+        <button
+          className="w-full bg-blue-500 text-white mt-4 p-2 rounded font-bold"
+          onClick={handleSubmit}
+        >
           {/* When click pay need stripe api to continue the transactions  */}
-          Pay 
+          Pay
         </button>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
       </div>
     </div>
   );
