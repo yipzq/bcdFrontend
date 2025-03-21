@@ -44,6 +44,15 @@ import '../app/globals.css';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import Web3ContextProvider from '@/context/web3';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Gengchow developer',
+  description: 'RMT platform',
+  icons: {
+    icon: '/favicon.ico',
+  },
+};
 
 export default function RootLayout({
   children,
