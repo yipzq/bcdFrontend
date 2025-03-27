@@ -44,15 +44,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Connect } from './Connect';
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 
 export function Header() {
   const [usdBalance] = useState(0);
   const [rmtBalance] = useState(0);
-  const router = useRouter(); 
+  const router = useRouter();
 
   const handleAdminClick = () => {
-    router.push('/admin/login'); 
+    router.push('/admin/login');
   };
 
   return (
@@ -83,7 +83,7 @@ export function Header() {
 
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-600 transition"
-          onClick={handleAdminClick} 
+          onClick={handleAdminClick}
         >
           Admin
         </button>
