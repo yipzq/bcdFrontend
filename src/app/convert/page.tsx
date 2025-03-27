@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useAccount } from "wagmi"; 
+import { useAccount } from "wagmi";
 
 const TokenConverter: React.FC = () => {
   const [amount, setAmount] = useState<string>("0.0");
@@ -10,10 +10,10 @@ const TokenConverter: React.FC = () => {
   const [fromToken, setFromToken] = useState<"USD" | "RMT">("USD");
   const [toToken, setToToken] = useState<"USD" | "RMT">("RMT");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>(""); 
+  const [error, setError] = useState<string>("");
   const exchangeRate = 1;
 
-  const { isConnected } = useAccount(); 
+  const { isConnected } = useAccount();
 
   useEffect(() => {
     const fetchBalances = async () => {
@@ -36,32 +36,55 @@ const TokenConverter: React.FC = () => {
   }, []);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setAmount(value);
-    if (fromToken === "USD" && toToken === "RMT") {
-      setConvertedAmount((parseFloat(value) * exchangeRate).toFixed(2));
-    } else {
-      setConvertedAmount((parseFloat(value) / exchangeRate).toFixed(2));
+    let value = e.target.value;
+
+    // **Validation: Prevent negative values and non-numeric input**
+    if (!/^\d*\.?\d*$/.test(value)) return;
+
+    if (value === "") {
+      setAmount("");
+      setConvertedAmount("0.0");
+      return;
     }
+
+    const numericValue = parseFloat(value);
+    if (numericValue < 0) {
+      setError("Amount cannot be negative.");
+      return;
+    }
+
+    const maxBalance = fromToken === "USD" ? balanceUSD : balanceRMT;
+    if (numericValue > maxBalance) {
+      setError(`Insufficient balance. Max: ${maxBalance} ${fromToken}`);
+      return;
+    }
+
+    setError("");
+    setAmount(value);
+    setConvertedAmount(
+      fromToken === "USD" && toToken === "RMT"
+        ? (numericValue * exchangeRate).toFixed(2)
+        : (numericValue / exchangeRate).toFixed(2)
+    );
   };
 
   const handleSwap = () => {
-    const temp = amount;
+    setError("");
     setAmount(convertedAmount);
-    setConvertedAmount(temp);
-    const tempToken = fromToken;
+    setConvertedAmount(amount);
     setFromToken(toToken);
-    setToToken(tempToken);
+    setToToken(fromToken);
   };
 
   const handleMaxClick = () => {
     const maxBalance = fromToken === "USD" ? balanceUSD : balanceRMT;
+    setError("");
     setAmount(maxBalance.toString());
-    if (fromToken === "USD" && toToken === "RMT") {
-      setConvertedAmount((maxBalance * exchangeRate).toFixed(2));
-    } else {
-      setConvertedAmount((maxBalance / exchangeRate).toFixed(2));
-    }
+    setConvertedAmount(
+      fromToken === "USD" && toToken === "RMT"
+        ? (maxBalance * exchangeRate).toFixed(2)
+        : (maxBalance / exchangeRate).toFixed(2)
+    );
   };
 
   const handleConfirm = () => {
@@ -70,15 +93,22 @@ const TokenConverter: React.FC = () => {
       return;
     }
 
-    if (parseFloat(amount) <= 0) {
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
       setError("Please enter a valid amount.");
       return;
     }
 
-    setError(""); 
+    const maxBalance = fromToken === "USD" ? balanceUSD : balanceRMT;
+    if (numericAmount > maxBalance) {
+      setError(`Insufficient balance. Max: ${maxBalance} ${fromToken}`);
+      return;
+    }
 
-    // ✅ Process token conversion (You can add logic here to interact with the smart contract)
-    console.log(`Converting ${amount} ${fromToken} to ${convertedAmount} ${toToken}`);
+    setError("");
+    console.log(
+      `Converting ${amount} ${fromToken} to ${convertedAmount} ${toToken}`
+    );
   };
 
   return (
@@ -94,13 +124,19 @@ const TokenConverter: React.FC = () => {
               className="bg-transparent text-2xl w-full focus:outline-none"
               value={amount}
               onChange={handleAmountChange}
+              min="0"
             />
-            <button className="text-blue-500 px-3 py-1" onClick={handleMaxClick}>
+            <button
+              className="text-blue-500 px-3 py-1"
+              onClick={handleMaxClick}
+            >
               Max
             </button>
             <span className="text-gray-400">{fromToken}</span>
           </div>
-          <p className="text-gray-500 text-sm">Balance: {fromToken === "USD" ? balanceUSD : balanceRMT}</p>
+          <p className="text-gray-500 text-sm">
+            Balance: {balanceUSD} USD / {balanceRMT} RMT
+          </p>
         </div>
 
         <div className="flex justify-center w-full">
@@ -123,7 +159,9 @@ const TokenConverter: React.FC = () => {
             />
             <span className="text-gray-400">{toToken}</span>
           </div>
-          <p className="text-gray-500 text-sm">Balance: {toToken === "USD" ? balanceUSD : balanceRMT}</p>
+          <p className="text-gray-500 text-sm">
+            Balance: {balanceUSD} USD / {balanceRMT} RMT
+          </p>
         </div>
 
         <button
