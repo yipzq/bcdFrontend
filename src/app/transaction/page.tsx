@@ -1,48 +1,52 @@
-'use client';
-import React, { useState } from 'react';
-import { FaRegCopy } from 'react-icons/fa';
-import { FiExternalLink } from 'react-icons/fi';
+"use client";
+import React, { useState } from "react";
 
 const TransactionsPage: React.FC = () => {
-  const [status, setStatus] = useState('All');
-  const [date, setDate] = useState('');
+  const [status, setStatus] = useState("All");
+  const [date, setDate] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const transactions = [
     {
-      token: 'RMT',
-      network: 'TRC20',
+      token: "RMT",
+      network: "TRC20",
       amount: 17100,
-      address: 'TLWpBoko...RJaVgCTk',
-      txid: 't67bf9tQ...m96eF01ST',
-      status: 'Done',
-      date: '2024-10-14 18:12:45',
+      address: "TLWpBoko...RJaVgCTk",
+      txid: "t67bf9tQ...m96eF01ST",
+      status: "Done",
+      date: "2024-10-14 18:12:45",
     },
     {
-      token: 'RMT',
-      network: 'TON',
+      token: "RMT",
+      network: "TON",
       amount: 7.0,
-      address: 'EQDpZ9Hq...u0Bk12n9D',
-      txid: 'z67fpR6L...n3Fq678k',
-      status: 'Done',
-      date: '2024-10-14 15:50:23',
+      address: "EQDpZ9Hq...u0Bk12n9D",
+      txid: "z67fpR6L...n3Fq678k",
+      status: "Done",
+      date: "2024-10-14 15:50:23",
     },
-    // More transactions
   ];
 
-  const handleExport = () => {
-    // Define the CSV headers
-    const headers = [
-      'Token',
-      'Amount',
-      'Address',
-      'TXID',
-      'Status',
-      'Date & Time',
-    ];
+  const validStatuses = ["All", "Done", "Pending"];
 
-    // Map each transaction to an array of CSV-compatible fields.
+  const handleExport = () => {
+    if (transactions.length === 0) {
+      setError("No transactions available for export.");
+      return;
+    }
+
+    setError(null);
+
+    const headers = [
+      "Token",
+      "Amount",
+      "Address",
+      "TXID",
+      "Status",
+      "Date & Time",
+    ];
     const rows = transactions.map((tx) => [
-      'RMT', // Force token to be "RMT"
+      tx.token,
       tx.amount,
       tx.address,
       tx.txid,
@@ -50,22 +54,44 @@ const TransactionsPage: React.FC = () => {
       tx.date,
     ]);
 
-    // Create CSV string content
-    let csvContent = headers.join(',') + '\n';
+    let csvContent = headers.join(",") + "\n";
     rows.forEach((row) => {
-      csvContent += row.join(',') + '\n';
+      csvContent += row.join(",") + "\n";
     });
 
-    // Create a Blob from the CSV string and generate a download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'transactions.csv');
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "transactions.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.value;
+    const today = new Date().toISOString().split("T")[0];
+
+    if (selectedDate > today) {
+      setError("Future dates are not allowed.");
+      return;
+    }
+
+    setError(null);
+    setDate(selectedDate);
+  };
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedStatus = e.target.value;
+    if (!validStatuses.includes(selectedStatus)) {
+      setError("Invalid status selected.");
+      return;
+    }
+
+    setError(null);
+    setStatus(selectedStatus);
   };
 
   return (
@@ -78,7 +104,7 @@ const TransactionsPage: React.FC = () => {
         <select
           className="bg-gray-900 p-2 rounded-lg"
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          onChange={handleStatusChange}
         >
           <option value="All">All Status</option>
           <option value="Done">Done</option>
@@ -88,11 +114,12 @@ const TransactionsPage: React.FC = () => {
           type="date"
           className="bg-gray-900 p-2 rounded-lg"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={handleDateChange}
         />
       </div>
 
-      {/* Export button positioned at the top right with padding */}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+
       <button
         className="absolute top-6 right-6 px-4 py-2 bg-green-600 rounded hover:bg-green-500"
         onClick={handleExport}
@@ -119,9 +146,16 @@ const TransactionsPage: React.FC = () => {
               <td className="p-2">{tx.address}</td>
               <td
                 className="p-2 text-blue-400 cursor-pointer"
-                onClick={() =>
-                  window.open(`https://blockchain.com/tx/${tx.txid}`, '_blank')
-                }
+                onClick={() => {
+                  if (tx.txid) {
+                    window.open(
+                      `https://blockchain.com/tx/${tx.txid}`,
+                      "_blank"
+                    );
+                  } else {
+                    setError("Invalid transaction ID.");
+                  }
+                }}
               >
                 {tx.txid.slice(0, 6)}...{tx.txid.slice(-6)}
               </td>

@@ -14,33 +14,60 @@
 //   );
 // }
 
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import CheckoutPage from '@/app/components/CheckoutPage';
-import convertToSubcurrency from '@/lib/convertToSubcurrency';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import React, { useState, useEffect } from "react";
+import CheckoutPage from "@/app/components/CheckoutPage";
+import convertToSubcurrency from "@/lib/convertToSubcurrency";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
-if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
-  throw new Error('NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not defined');
+if (!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
+  throw new Error("NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not defined");
 }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
 
 export default function Payment() {
-  const [totalAmount, setTotalAmount] = useState(0.0);
+  const [totalAmount, setTotalAmount] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // ✅ Retrieve deposit data from localStorage
-    const storedData = localStorage.getItem('totalAmount');
-    if (storedData) {
-      setTotalAmount(parseFloat(storedData));
+    try {
+      const storedData = localStorage.getItem("totalAmount");
+
+      if (!storedData) {
+        setError("No payment data found. Please start a new deposit.");
+        return;
+      }
+
+      const parsedAmount = parseFloat(storedData);
+
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        setError("Invalid deposit amount. Please enter a valid amount.");
+        return;
+      }
+
+      setTotalAmount(parsedAmount);
+    } catch (err) {
+      setError("An error occurred while retrieving payment data.");
     }
   }, []);
 
-  if (!totalAmount) {
-    return <p>Loading...</p>; // Show a loading message while fetching data
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <div className="bg-red-500 text-white p-4 rounded-lg shadow-md">
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (totalAmount === null) {
+    return (
+      <p className="text-center text-gray-600">Loading payment details...</p>
+    );
   }
 
   return (
@@ -49,9 +76,9 @@ export default function Payment() {
         <Elements
           stripe={stripePromise}
           options={{
-            mode: 'payment',
+            mode: "payment",
             amount: convertToSubcurrency(totalAmount),
-            currency: 'usd',
+            currency: "usd",
           }}
         >
           <CheckoutPage amount={totalAmount} />
