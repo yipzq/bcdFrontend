@@ -1,31 +1,30 @@
-'use client';
-import React, { useEffect, useState } from 'react';
+"use client";
+import React, { useEffect, useState } from "react";
+import { useAccount } from "wagmi"; 
 
 const TokenConverter: React.FC = () => {
-  const [amount, setAmount] = useState<string>('0.0');
-  const [convertedAmount, setConvertedAmount] = useState<string>('0.0');
-  const [balanceUSD, setBalanceUSD] = useState<number>(0); // Added some balance for testing
-  const [balanceRMT, setBalanceRMT] = useState<number>(0); // Added some balance for testing
-  const [fromToken, setFromToken] = useState<'USD' | 'RMT'>('USD');
-  const [toToken, setToToken] = useState<'USD' | 'RMT'>('RMT');
+  const [amount, setAmount] = useState<string>("0.0");
+  const [convertedAmount, setConvertedAmount] = useState<string>("0.0");
+  const [balanceUSD, setBalanceUSD] = useState<number>(0);
+  const [balanceRMT, setBalanceRMT] = useState<number>(0);
+  const [fromToken, setFromToken] = useState<"USD" | "RMT">("USD");
+  const [toToken, setToToken] = useState<"USD" | "RMT">("RMT");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const exchangeRate = 1; // 1 USD = 1 RMT (Adjust accordingly)
+  const [error, setError] = useState<string>(""); 
+  const exchangeRate = 1;
 
-  // Fetch balances from your backend
+  const { isConnected } = useAccount(); 
+
   useEffect(() => {
     const fetchBalances = async () => {
       setIsLoading(true);
       try {
-        // Replace with your actual API endpoint
-        const response = await fetch('/api/balances');
+        const response = await fetch("/api/balances");
         const data = await response.json();
-
-        // Update the state with real balances from your backend
         setBalanceUSD(data.usdBalance);
         setBalanceRMT(data.rmtBalance);
       } catch (error) {
-        console.error('Error fetching balances:', error);
-        // Optionally set fallback values if API fails
+        console.error("Error fetching balances:", error);
         setBalanceUSD(0);
         setBalanceRMT(0);
       } finally {
@@ -34,48 +33,53 @@ const TokenConverter: React.FC = () => {
     };
 
     fetchBalances();
-  }, []); // Empty dependency array means this runs once on component mount
+  }, []);
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setAmount(value);
-
-    // Calculate conversion based on current token direction
-    if (fromToken === 'USD' && toToken === 'RMT') {
+    if (fromToken === "USD" && toToken === "RMT") {
       setConvertedAmount((parseFloat(value) * exchangeRate).toFixed(2));
     } else {
       setConvertedAmount((parseFloat(value) / exchangeRate).toFixed(2));
     }
   };
 
-  // Updated swap function to swap both values and token positions
   const handleSwap = () => {
-    // Swap the values
     const temp = amount;
     setAmount(convertedAmount);
     setConvertedAmount(temp);
-
-    // Swap token positions
     const tempToken = fromToken;
     setFromToken(toToken);
     setToToken(tempToken);
   };
 
   const handleMaxClick = () => {
-    // Set max balance based on current fromToken
-    const maxBalance = fromToken === 'USD' ? balanceUSD : balanceRMT;
+    const maxBalance = fromToken === "USD" ? balanceUSD : balanceRMT;
     setAmount(maxBalance.toString());
-
-    // Calculate converted amount based on current token direction
-    if (fromToken === 'USD' && toToken === 'RMT') {
+    if (fromToken === "USD" && toToken === "RMT") {
       setConvertedAmount((maxBalance * exchangeRate).toFixed(2));
     } else {
       setConvertedAmount((maxBalance / exchangeRate).toFixed(2));
     }
   };
 
-  // Get the current balance based on token type
-  const getFromBalance = () => (fromToken === 'USD' ? balanceUSD : balanceRMT);
-  const getToBalance = () => (toToken === 'USD' ? balanceUSD : balanceRMT);
+  const handleConfirm = () => {
+    if (!isConnected) {
+      setError("Please connect to your wallet first.");
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
+
+    setError(""); 
+
+    // ✅ Process token conversion (You can add logic here to interact with the smart contract)
+    console.log(`Converting ${amount} ${fromToken} to ${convertedAmount} ${toToken}`);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center p-10">
@@ -91,18 +95,14 @@ const TokenConverter: React.FC = () => {
               value={amount}
               onChange={handleAmountChange}
             />
-            <button
-              className="text-blue-500 px-3 py-1"
-              onClick={handleMaxClick}
-            >
+            <button className="text-blue-500 px-3 py-1" onClick={handleMaxClick}>
               Max
             </button>
             <span className="text-gray-400">{fromToken}</span>
           </div>
-          <p className="text-gray-500 text-sm">Balance: {getFromBalance()}</p>
+          <p className="text-gray-500 text-sm">Balance: {fromToken === "USD" ? balanceUSD : balanceRMT}</p>
         </div>
 
-        {/* Swap button */}
         <div className="flex justify-center w-full">
           <button
             onClick={handleSwap}
@@ -123,15 +123,18 @@ const TokenConverter: React.FC = () => {
             />
             <span className="text-gray-400">{toToken}</span>
           </div>
-          <p className="text-gray-500 text-sm">Balance: {getToBalance()}</p>
+          <p className="text-gray-500 text-sm">Balance: {toToken === "USD" ? balanceUSD : balanceRMT}</p>
         </div>
 
         <button
           className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
-          disabled={parseFloat(amount) <= 0}
+          onClick={handleConfirm}
+          disabled={!isConnected}
         >
-          Confirm
+          {isConnected ? "Confirm" : "Connect Wallet First"}
         </button>
+
+        {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
     </div>
   );

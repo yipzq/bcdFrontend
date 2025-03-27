@@ -1,19 +1,32 @@
 'use client';
 import React, { useState } from 'react';
+import { useAccount } from 'wagmi';
 
 const SendToken: React.FC = () => {
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [amount, setAmount] = useState<string>('0.0');
   const [balance, setBalance] = useState<number>(0);
+  const [error, setError] = useState<string>('');
+
+  const { isConnected } = useAccount();
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
   };
 
   const handleConfirm = () => {
-    if (parseFloat(amount) > 0 && walletAddress) {
-      alert(`Sending ${amount} RMT to ${walletAddress}`);
+    if (!isConnected) {
+      setError('Please connect to your wallet first.');
+      return;
     }
+
+    if (parseFloat(amount) <= 0 || !walletAddress) {
+      setError('Please enter a valid amount and wallet address.');
+      return;
+    }
+
+    setError('');
+    alert(`Sending ${amount} RMT to ${walletAddress}`);
   };
 
   return (
@@ -47,11 +60,13 @@ const SendToken: React.FC = () => {
 
         <button
           className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
-          disabled={parseFloat(amount) <= 0 || !walletAddress}
+          disabled={!isConnected}
           onClick={handleConfirm}
         >
-          Confirm
+          {isConnected ? 'Confirm' : 'Connect Wallet First'}
         </button>
+
+        {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
     </div>
   );
