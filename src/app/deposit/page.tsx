@@ -65,13 +65,13 @@
 
 // const DepositToken: React.FC = () => {
 //   const [amount, setAmount] = useState<string>("100");
-//   const [error, setError] = useState(''); 
+//   const [error, setError] = useState('');
 //   const depositAmount = parseFloat(amount) || 0;
 //   const processingFee = depositAmount * 0.02;
 //   const totalAmount = depositAmount + processingFee;
 
 //   const router = useRouter();
-  
+
 //   const handleSubmit = () => {
 //     if (depositAmount <= 0) {
 //       setError('Please enter a valid amount.');
@@ -133,13 +133,46 @@ import { useAccount } from "wagmi";
 
 const DepositToken: React.FC = () => {
   const [amount, setAmount] = useState<string>("100");
-  const [error, setError] = useState("");
-  const depositAmount = parseFloat(amount) || 0;
+  const [error, setError] = useState<string>("");
+
+  const router = useRouter();
+  const { isConnected } = useAccount();
+
+  const depositAmount = parseFloat(amount.trim()); // Trim to avoid empty spaces
   const processingFee = depositAmount * 0.02;
   const totalAmount = depositAmount + processingFee;
 
-  const router = useRouter();
-  const { isConnected } = useAccount(); 
+  const validateInput = (value: string) => {
+    if (value.trim() === "") {
+      setError("Amount cannot be empty.");
+      return false;
+    }
+
+    const numericValue = parseFloat(value);
+    if (isNaN(numericValue)) {
+      setError("Please enter a valid number.");
+      return false;
+    }
+
+    if (numericValue <= 0) {
+      setError("Deposit amount must be greater than zero.");
+      return false;
+    }
+
+    if (numericValue > 1000000) {
+      setError("Maximum deposit amount is 1,000,000 USD.");
+      return false;
+    }
+
+    setError("");
+    return true;
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAmount(value);
+    validateInput(value); // Validate while typing
+  };
 
   const handleSubmit = () => {
     if (!isConnected) {
@@ -147,17 +180,12 @@ const DepositToken: React.FC = () => {
       return;
     }
 
-    if (depositAmount <= 0) {
-      setError("Please enter a valid amount.");
-      return;
+    if (!validateInput(amount)) {
+      return; // Prevent submission if input is invalid
     }
 
-    setError(""); 
-
-  
+    setError(""); // Clear errors before proceeding
     localStorage.setItem("totalAmount", totalAmount.toString());
-
-    
     router.push("/payment");
   };
 
@@ -170,7 +198,8 @@ const DepositToken: React.FC = () => {
             type="number"
             className="bg-transparent text-2xl w-full focus:outline-none text-white"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={handleAmountChange}
+            min="0"
           />
           <span className="text-gray-400">USD</span>
         </div>
@@ -178,22 +207,28 @@ const DepositToken: React.FC = () => {
         <div className="bg-gray-800 p-4 rounded-lg mt-4">
           <div className="flex justify-between text-gray-400">
             <span>Deposit amount</span>
-            <span>{depositAmount.toFixed(2)} USD</span>
+            <span>
+              {isNaN(depositAmount) ? "0.00" : depositAmount.toFixed(2)} USD
+            </span>
           </div>
           <div className="flex justify-between text-gray-400 mt-2">
             <span>Processing fee (2%)</span>
-            <span>{processingFee.toFixed(2)} USD</span>
+            <span>
+              {isNaN(processingFee) ? "0.00" : processingFee.toFixed(2)} USD
+            </span>
           </div>
           <div className="flex justify-between text-gray-200 mt-2 font-semibold">
             <span>Total amount to be paid</span>
-            <span>{totalAmount.toFixed(2)} USD</span>
+            <span>
+              {isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)} USD
+            </span>
           </div>
         </div>
 
         <button
           className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
           onClick={handleSubmit}
-          disabled={!isConnected}
+          disabled={!isConnected || !!error}
         >
           {isConnected ? "Pay" : "Connect Wallet First"}
         </button>
