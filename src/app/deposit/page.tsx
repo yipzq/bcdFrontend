@@ -59,30 +59,106 @@
 //   );
 // }
 
-'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+// 'use client';
+// import React, { useState } from 'react';
+// import { useRouter } from 'next/navigation';
+
+// const DepositToken: React.FC = () => {
+//   const [amount, setAmount] = useState<string>("100");
+//   const [error, setError] = useState(''); 
+//   const depositAmount = parseFloat(amount) || 0;
+//   const processingFee = depositAmount * 0.02;
+//   const totalAmount = depositAmount + processingFee;
+
+//   const router = useRouter();
+  
+//   const handleSubmit = () => {
+//     if (depositAmount <= 0) {
+//       setError('Please enter a valid amount.');
+//       return;
+//     }
+
+//     // ✅ Store data in localStorage instead of API call
+//     localStorage.setItem('totalAmount', totalAmount.toString());
+
+//     // ✅ Navigate to confirmation page
+//     router.push('/payment');
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-black text-white flex flex-col items-center p-10">
+//       <h1 className="text-3xl font-semibold">Deposit</h1>
+//       <div className="mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-xl">
+//         <div className="mb-4 p-4 border border-gray-700 rounded-lg flex justify-between items-center">
+//           <input
+//             type="number"
+//             className="bg-transparent text-2xl w-full focus:outline-none text-white"
+//             value={amount}
+//             onChange={(e) => setAmount(e.target.value)}
+//           />
+//           <span className="text-gray-400">USD</span>
+//         </div>
+
+//         <div className="bg-gray-800 p-4 rounded-lg mt-4">
+//           <div className="flex justify-between text-gray-400">
+//             <span>Deposit amount</span>
+//             <span>{depositAmount.toFixed(2)} USD</span>
+//           </div>
+//           <div className="flex justify-between text-gray-400 mt-2">
+//             <span>Processing fee (2%)</span>
+//             <span>{processingFee.toFixed(2)} USD</span>
+//           </div>
+//           <div className="flex justify-between text-gray-200 mt-2 font-semibold">
+//             <span>Total amount to be paid</span>
+//             <span>{totalAmount.toFixed(2)} USD</span>
+//           </div>
+//         </div>
+
+//         <button className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
+//           onClick={handleSubmit}>
+//           Pay
+//         </button>
+//         {error && <p className="text-red-500 mb-4">{error}</p>}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default DepositToken;
+
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAccount } from "wagmi";
 
 const DepositToken: React.FC = () => {
   const [amount, setAmount] = useState<string>("100");
-  const [error, setError] = useState(''); 
+  const [error, setError] = useState("");
   const depositAmount = parseFloat(amount) || 0;
   const processingFee = depositAmount * 0.02;
   const totalAmount = depositAmount + processingFee;
 
   const router = useRouter();
-  
+  const { isConnected } = useAccount(); 
+
   const handleSubmit = () => {
-    if (depositAmount <= 0) {
-      setError('Please enter a valid amount.');
+    if (!isConnected) {
+      setError("Please connect to your wallet first.");
       return;
     }
 
-    // ✅ Store data in localStorage instead of API call
-    localStorage.setItem('totalAmount', totalAmount.toString());
+    if (depositAmount <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
 
-    // ✅ Navigate to confirmation page
-    router.push('/payment');
+    setError(""); 
+
+  
+    localStorage.setItem("totalAmount", totalAmount.toString());
+
+    
+    router.push("/payment");
   };
 
   return (
@@ -114,15 +190,18 @@ const DepositToken: React.FC = () => {
           </div>
         </div>
 
-        <button className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
-          onClick={handleSubmit}>
-          Pay
+        <button
+          className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
+          onClick={handleSubmit}
+          disabled={!isConnected}
+        >
+          {isConnected ? "Pay" : "Connect Wallet First"}
         </button>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+
+        {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
     </div>
   );
 };
 
 export default DepositToken;
-
