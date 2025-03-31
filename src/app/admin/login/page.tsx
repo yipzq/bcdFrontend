@@ -1,5 +1,8 @@
+// src/app/admin/login/page.tsx
+
 'use client';
 
+import React from 'react'
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
@@ -13,24 +16,35 @@ export default function AdminLogin() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error);
+    // Validation
+    if (username.trim() === '' || password.trim() === '') {
+      setError('Username and password are required');
       return;
     }
-
-    // ✅ Store token in session storage (not localStorage for security)
-    sessionStorage.setItem('adminToken', data.token);
-
-    // ✅ Redirect to Admin Dashboard
+  
+    try {
+      // Send login request to the server
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+  
+      if (!res.ok) {
+        const errorData = await res.json();
+        setError(errorData.error || 'Login failed');
+        return;
+      }
+  
+    // Successful login, redirect to dashboard
+    const data = await res.json();
     router.push('/admin/dashboard');
-  };
+    // Store username in session state
+    sessionStorage.setItem('username', data.username);
+  } catch (err) {
+    setError('Network error');
+  }
+};
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
@@ -38,7 +52,6 @@ export default function AdminLogin() {
       <p className="text-gray-400 mb-6">The transactions awaiting for you.</p>
 
       <div className="w-full max-w-md bg-gray-900 p-8 rounded-lg shadow-md">
-        {/* Username Input with Visibility Toggle */}
         <div className="relative mb-4">
           <input
             type={showUsername ? 'text' : 'password'}
@@ -56,7 +69,6 @@ export default function AdminLogin() {
           </button>
         </div>
 
-        {/* Password Input with Visibility Toggle */}
         <div className="relative mb-4">
           <input
             type={showPassword ? 'text' : 'password'}
@@ -80,7 +92,7 @@ export default function AdminLogin() {
 
         <button
           onClick={handleLogin}
-          className="w-full bg-blue-600 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+          className="w-full bg-blue-600 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
         >
           Login
         </button>
