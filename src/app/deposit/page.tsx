@@ -159,8 +159,9 @@ const DepositToken: React.FC = () => {
       return false;
     }
 
-    if (numericValue > 1000000) {
-      setError("Maximum deposit amount is 1,000,000 USD.");
+    const computedTotal = numericValue + numericValue * 0.02;
+    if (computedTotal > 999999.99) {
+      setError("Total amount (including fee) cannot exceed 999,999.99 USD.");
       return false;
     }
 
