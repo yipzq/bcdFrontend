@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 
+import Link from 'next/link';
+
 export default function PaymentSuccess({
   searchParams: { amount },
 }: {
@@ -36,6 +38,12 @@ export default function PaymentSuccess({
         <div className="bg-white p-2 rounded-md text-purple-500 mt-5 text-4xl font-bold">
           ${parsedAmount.toFixed(2)}
         </div>
+
+        <Link href="/">
+          <button className="mt-15 bg-white text-purple-600 px-8 py-3 rounded-md hover:bg-purple-100 transition font-semibold">
+            Go to Home
+          </button>
+        </Link>
       </div>
     </main>
   );
