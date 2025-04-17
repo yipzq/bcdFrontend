@@ -7,6 +7,7 @@ import {
   PaymentElement,
 } from '@stripe/react-stripe-js';
 import convertToSubcurrency from '@/lib/convertToSubcurrency';
+import { useWallet } from '@/context/WalletContext';
 
 const CheckoutPage = ({ amount }: { amount: number }) => {
   const stripe = useStripe();
@@ -14,6 +15,7 @@ const CheckoutPage = ({ amount }: { amount: number }) => {
   const [errorMessage, setErrorMessage] = useState<string>();
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(false);
+  const { walletAddress } = useWallet();
 
   useEffect(() => {
     fetch('/api/create-payment-intent', {
@@ -21,7 +23,10 @@ const CheckoutPage = ({ amount }: { amount: number }) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ amount: convertToSubcurrency(amount) }),
+      body: JSON.stringify({
+        amount: convertToSubcurrency(amount),
+        walletAddress,
+      }),
     })
       .then((res) => res.json())
       .then((data) => setClientSecret(data.clientSecret));
@@ -55,9 +60,6 @@ const CheckoutPage = ({ amount }: { amount: number }) => {
       // This point is only reached if there's an immediate error when
       // confirming the payment. Show the error to your customer (for example, payment details incomplete)
       setErrorMessage(error.message);
-    } else {
-      // The payment UI automatically closes with a success animation.
-      // Your customer is redirected to your `return_url`.
     }
 
     setLoading(false);

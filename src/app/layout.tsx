@@ -45,6 +45,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import Web3ContextProvider from '@/context/web3';
 import type { Metadata } from 'next';
+import { WalletProvider } from '@/context/WalletContext';
 
 export const metadata: Metadata = {
   title: 'Gengchow developer',
@@ -63,9 +64,11 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-black text-white">
         <Web3ContextProvider cookies={null}>
-          <Header />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
+          <WalletProvider>
+            <Header />
+            <main className="min-h-screen">{children}</main>
+            <Footer />
+          </WalletProvider>
         </Web3ContextProvider>
       </body>
     </html>

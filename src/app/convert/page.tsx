@@ -1,30 +1,32 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+'use client';
+import React, { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
+import { useWallet } from '@/context/WalletContext';
 
 const TokenConverter: React.FC = () => {
-  const [amount, setAmount] = useState<string>("0.0");
-  const [convertedAmount, setConvertedAmount] = useState<string>("0.0");
+  const [amount, setAmount] = useState<string>('0.0');
+  const [convertedAmount, setConvertedAmount] = useState<string>('0.0');
   const [balanceUSD, setBalanceUSD] = useState<number>(0);
   const [balanceRMT, setBalanceRMT] = useState<number>(0);
-  const [fromToken, setFromToken] = useState<"USD" | "RMT">("USD");
-  const [toToken, setToToken] = useState<"USD" | "RMT">("RMT");
+  const [fromToken, setFromToken] = useState<'USD' | 'RMT'>('USD');
+  const [toToken, setToToken] = useState<'USD' | 'RMT'>('RMT');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>('');
   const exchangeRate = 1;
 
   const { isConnected } = useAccount();
+  const { walletAddress, tokenBalance, usdBalance } = useWallet();
 
   useEffect(() => {
     const fetchBalances = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch("/api/balances");
+        const response = await fetch('/api/balances');
         const data = await response.json();
         setBalanceUSD(data.usdBalance);
         setBalanceRMT(data.rmtBalance);
       } catch (error) {
-        console.error("Error fetching balances:", error);
+        console.error('Error fetching balances:', error);
         setBalanceUSD(0);
         setBalanceRMT(0);
       } finally {
@@ -41,35 +43,35 @@ const TokenConverter: React.FC = () => {
     // **Validation: Prevent negative values and non-numeric input**
     if (!/^\d*\.?\d*$/.test(value)) return;
 
-    if (value === "") {
-      setAmount("");
-      setConvertedAmount("0.0");
+    if (value === '') {
+      setAmount('');
+      setConvertedAmount('0.0');
       return;
     }
 
     const numericValue = parseFloat(value);
     if (numericValue < 0) {
-      setError("Amount cannot be negative.");
+      setError('Amount cannot be negative.');
       return;
     }
 
-    const maxBalance = fromToken === "USD" ? balanceUSD : balanceRMT;
+    const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
     if (numericValue > maxBalance) {
       setError(`Insufficient balance. Max: ${maxBalance} ${fromToken}`);
       return;
     }
 
-    setError("");
+    setError('');
     setAmount(value);
     setConvertedAmount(
-      fromToken === "USD" && toToken === "RMT"
+      fromToken === 'USD' && toToken === 'RMT'
         ? (numericValue * exchangeRate).toFixed(2)
         : (numericValue / exchangeRate).toFixed(2)
     );
   };
 
   const handleSwap = () => {
-    setError("");
+    setError('');
     setAmount(convertedAmount);
     setConvertedAmount(amount);
     setFromToken(toToken);
@@ -77,38 +79,56 @@ const TokenConverter: React.FC = () => {
   };
 
   const handleMaxClick = () => {
-    const maxBalance = fromToken === "USD" ? balanceUSD : balanceRMT;
-    setError("");
+    const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
+    setError('');
     setAmount(maxBalance.toString());
     setConvertedAmount(
-      fromToken === "USD" && toToken === "RMT"
+      fromToken === 'USD' && toToken === 'RMT'
         ? (maxBalance * exchangeRate).toFixed(2)
         : (maxBalance / exchangeRate).toFixed(2)
     );
   };
 
+  const convertToToken = () => {
+    fetch('/api/update-user-balance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount,
+        walletAddress,
+      }),
+    });
+  };
+
   const handleConfirm = () => {
     if (!isConnected) {
-      setError("Please connect to your wallet first.");
+      setError('Please connect to your wallet first.');
       return;
     }
 
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      setError("Please enter a valid amount.");
+      setError('Please enter a valid amount.');
       return;
     }
 
-    const maxBalance = fromToken === "USD" ? balanceUSD : balanceRMT;
+    const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
     if (numericAmount > maxBalance) {
       setError(`Insufficient balance. Max: ${maxBalance} ${fromToken}`);
       return;
     }
 
-    setError("");
+    if (fromToken === 'USD' && toToken === 'RMT') {
+      convertToToken();
+    }
+
+    setError('');
     console.log(
       `Converting ${amount} ${fromToken} to ${convertedAmount} ${toToken}`
     );
+    window.location.reload();
   };
 
   return (
@@ -135,7 +155,7 @@ const TokenConverter: React.FC = () => {
             <span className="text-gray-400">{fromToken}</span>
           </div>
           <p className="text-gray-500 text-sm">
-            Balance: {balanceUSD} USD / {balanceRMT} RMT
+            Balance: {usdBalance} USD / {tokenBalance} RMT
           </p>
         </div>
 
@@ -160,7 +180,7 @@ const TokenConverter: React.FC = () => {
             <span className="text-gray-400">{toToken}</span>
           </div>
           <p className="text-gray-500 text-sm">
-            Balance: {balanceUSD} USD / {balanceRMT} RMT
+            Balance: {usdBalance} USD / {tokenBalance} RMT
           </p>
         </div>
 
@@ -169,7 +189,7 @@ const TokenConverter: React.FC = () => {
           onClick={handleConfirm}
           disabled={!isConnected}
         >
-          {isConnected ? "Confirm" : "Connect Wallet First"}
+          {isConnected ? 'Confirm' : 'Connect Wallet First'}
         </button>
 
         {error && <p className="text-red-500 mt-2">{error}</p>}
