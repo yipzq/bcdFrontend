@@ -126,14 +126,15 @@
 
 // export default DepositToken;
 
-"use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+'use client';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
+import { useWallet } from '@/context/WalletContext';
 
 const DepositToken: React.FC = () => {
-  const [amount, setAmount] = useState<string>("100");
-  const [error, setError] = useState<string>("");
+  const [amount, setAmount] = useState<string>('');
+  const [error, setError] = useState<string>('');
 
   const router = useRouter();
   const { isConnected } = useAccount();
@@ -142,30 +143,32 @@ const DepositToken: React.FC = () => {
   const processingFee = depositAmount * 0.02;
   const totalAmount = depositAmount + processingFee;
 
+  const { walletAddress } = useWallet();
+
   const validateInput = (value: string) => {
-    if (value.trim() === "") {
-      setError("Amount cannot be empty.");
+    if (value.trim() === '') {
+      setError('Amount cannot be empty.');
       return false;
     }
 
     const numericValue = parseFloat(value);
     if (isNaN(numericValue)) {
-      setError("Please enter a valid number.");
+      setError('Please enter a valid number.');
       return false;
     }
 
     if (numericValue <= 0) {
-      setError("Deposit amount must be greater than zero.");
+      setError('Deposit amount must be greater than zero.');
       return false;
     }
 
     const computedTotal = numericValue + numericValue * 0.02;
     if (computedTotal > 999999.99) {
-      setError("Total amount (including fee) cannot exceed 999,999.99 USD.");
+      setError('Total amount (including fee) cannot exceed 999,999.99 USD.');
       return false;
     }
 
-    setError("");
+    setError('');
     return true;
   };
 
@@ -177,7 +180,7 @@ const DepositToken: React.FC = () => {
 
   const handleSubmit = () => {
     if (!isConnected) {
-      setError("Please connect to your wallet first.");
+      setError('Please connect to your wallet first.');
       return;
     }
 
@@ -185,9 +188,9 @@ const DepositToken: React.FC = () => {
       return; // Prevent submission if input is invalid
     }
 
-    setError(""); // Clear errors before proceeding
-    localStorage.setItem("totalAmount", totalAmount.toString());
-    router.push("/payment");
+    setError(''); // Clear errors before proceeding
+    localStorage.setItem('totalAmount', totalAmount.toString());
+    router.push('/payment');
   };
 
   return (
@@ -209,19 +212,19 @@ const DepositToken: React.FC = () => {
           <div className="flex justify-between text-gray-400">
             <span>Deposit amount</span>
             <span>
-              {isNaN(depositAmount) ? "0.00" : depositAmount.toFixed(2)} USD
+              {isNaN(depositAmount) ? '0.00' : depositAmount.toFixed(2)} USD
             </span>
           </div>
           <div className="flex justify-between text-gray-400 mt-2">
             <span>Processing fee (2%)</span>
             <span>
-              {isNaN(processingFee) ? "0.00" : processingFee.toFixed(2)} USD
+              {isNaN(processingFee) ? '0.00' : processingFee.toFixed(2)} USD
             </span>
           </div>
           <div className="flex justify-between text-gray-200 mt-2 font-semibold">
             <span>Total amount to be paid</span>
             <span>
-              {isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)} USD
+              {isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)} USD
             </span>
           </div>
         </div>
@@ -231,7 +234,7 @@ const DepositToken: React.FC = () => {
           onClick={handleSubmit}
           disabled={!isConnected || !!error}
         >
-          {isConnected ? "Pay" : "Connect Wallet First"}
+          {isConnected ? 'Pay' : 'Connect Wallet First'}
         </button>
 
         {error && <p className="text-red-500 mt-2">{error}</p>}

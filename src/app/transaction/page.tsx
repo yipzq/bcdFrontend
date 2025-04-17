@@ -1,49 +1,67 @@
-"use client";
-import React, { useState } from "react";
+'use client';
+import React, { useState, useEffect } from 'react';
+import { useWallet } from '@/context/WalletContext';
+
+interface Transaction {
+  transactionID: number;
+  amountUSD: number;
+  amountToken: number;
+  reference: string;
+  status: string;
+  transactionDateTime: string;
+  transactionType: string;
+  initiator: string;
+  recipient: string;
+  direction: 'incoming' | 'outgoing' | 'other';
+}
 
 const TransactionsPage: React.FC = () => {
-  const [status, setStatus] = useState("All");
-  const [date, setDate] = useState("");
+  const [status, setStatus] = useState('All');
+  const [date, setDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [transactionHistory, setTransactionHistory] = useState<Transaction[]>(
+    []
+  );
+  const { walletAddress } = useWallet();
 
   const transactions = [
     {
-      token: "RMT",
-      network: "TRC20",
+      token: 'RMT',
+      network: 'TRC20',
       amount: 17100,
-      address: "TLWpBoko...RJaVgCTk",
-      txid: "t67bf9tQ...m96eF01ST",
-      status: "Done",
-      date: "2024-10-14 18:12:45",
+      address: 'TLWpBoko...RJaVgCTk',
+      txid: 't67bf9tQ...m96eF01ST',
+      status: 'Done',
+      date: '2024-10-14 18:12:45',
     },
     {
-      token: "RMT",
-      network: "TON",
+      token: 'RMT',
+      network: 'TON',
       amount: 7.0,
-      address: "EQDpZ9Hq...u0Bk12n9D",
-      txid: "z67fpR6L...n3Fq678k",
-      status: "Done",
-      date: "2024-10-14 15:50:23",
+      address: 'EQDpZ9Hq...u0Bk12n9D',
+      txid: 'z67fpR6L...n3Fq678k',
+      status: 'Done',
+      date: '2024-10-14 15:50:23',
     },
   ];
 
-  const validStatuses = ["All", "Done", "Pending"];
+  const validStatuses = ['All', 'Done', 'Pending'];
 
   const handleExport = () => {
     if (transactions.length === 0) {
-      setError("No transactions available for export.");
+      setError('No transactions available for export.');
       return;
     }
 
     setError(null);
 
     const headers = [
-      "Token",
-      "Amount",
-      "Address",
-      "TXID",
-      "Status",
-      "Date & Time",
+      'Token',
+      'Amount',
+      'Address',
+      'TXID',
+      'Status',
+      'Date & Time',
     ];
     const rows = transactions.map((tx) => [
       tx.token,
@@ -54,16 +72,16 @@ const TransactionsPage: React.FC = () => {
       tx.date,
     ]);
 
-    let csvContent = headers.join(",") + "\n";
+    let csvContent = headers.join(',') + '\n';
     rows.forEach((row) => {
-      csvContent += row.join(",") + "\n";
+      csvContent += row.join(',') + '\n';
     });
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = "transactions.csv";
+    link.download = 'transactions.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -72,10 +90,10 @@ const TransactionsPage: React.FC = () => {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.value;
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split('T')[0];
 
     if (selectedDate > today) {
-      setError("Future dates are not allowed.");
+      setError('Future dates are not allowed.');
       return;
     }
 
@@ -86,13 +104,27 @@ const TransactionsPage: React.FC = () => {
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedStatus = e.target.value;
     if (!validStatuses.includes(selectedStatus)) {
-      setError("Invalid status selected.");
+      setError('Invalid status selected.');
       return;
     }
 
     setError(null);
     setStatus(selectedStatus);
   };
+
+  async function getTransactionHistory() {
+    const response = await fetch(
+      `../api/transaction?walletAddress=${walletAddress}`
+    );
+    const data = await response.json();
+    setTransactionHistory(data);
+  }
+
+  useEffect(() => {
+    if (walletAddress) {
+      getTransactionHistory();
+    }
+  }, [walletAddress]);
 
   return (
     <div className="min-h-screen bg-black text-white p-6 relative">
@@ -130,37 +162,89 @@ const TransactionsPage: React.FC = () => {
       <table className="w-full mt-4 border-collapse text-center">
         <thead>
           <tr className="bg-gray-800">
-            <th className="p-2">Token</th>
-            <th className="p-2">Amount</th>
-            <th className="p-2">Address</th>
-            <th className="p-2">TXID</th>
+            <th className="p-2">No.</th>
+            <th className="p-2">Type</th>
+            <th className="p-2">USD</th>
+            <th className="p-2">RMT</th>
+            <th className="p-2">Recipient</th>
+            <th className="p-2">Reference</th>
             <th className="p-2">Status</th>
             <th className="p-2">Date & Time</th>
           </tr>
         </thead>
         <tbody>
-          {transactions.map((tx, index) => (
+          {transactionHistory.map((tx, index) => (
+            // <tr key={index} className="border-b border-gray-700">
+            //   <td className="p-2">{index + 1}</td>
+            //   <td className="p-2">RMT</td>
+            //   <td className="p-2">{tx.amount}</td>
+            //   <td className="p-2">{tx.address}</td>
+            //   <td
+            //     className="p-2 text-blue-400 cursor-pointer"
+            //     onClick={() => {
+            //       if (tx.txid) {
+            //         window.open(
+            //           `https://blockchain.com/tx/${tx.txid}`,
+            //           '_blank'
+            //         );
+            //       } else {
+            //         setError('Invalid transaction ID.');
+            //       }
+            //     }}
+            //   >
+            //     {tx.txid.slice(0, 6)}...{tx.txid.slice(-6)}
+            //   </td>
+            //   <td className="p-2 text-green-400">{tx.status}</td>
+            //   <td className="p-2">{tx.date}</td>
+            // </tr>
             <tr key={index} className="border-b border-gray-700">
-              <td className="p-2">RMT</td>
-              <td className="p-2">{tx.amount}</td>
-              <td className="p-2">{tx.address}</td>
+              <td className="p-2">{index + 1}</td>
+              <td className="p-2">{tx.transactionType}</td>
               <td
-                className="p-2 text-blue-400 cursor-pointer"
-                onClick={() => {
-                  if (tx.txid) {
-                    window.open(
-                      `https://blockchain.com/tx/${tx.txid}`,
-                      "_blank"
-                    );
-                  } else {
-                    setError("Invalid transaction ID.");
-                  }
-                }}
+                className={`p-2 ${
+                  tx.transactionType === 'Deposit' ||
+                  tx.transactionType === 'Burn'
+                    ? 'text-green-500'
+                    : tx.transactionType === 'Withdraw' ||
+                      tx.transactionType === 'Mint'
+                    ? 'text-red-500'
+                    : ''
+                }`}
               >
-                {tx.txid.slice(0, 6)}...{tx.txid.slice(-6)}
+                {tx.amountUSD ?? '-'}
               </td>
-              <td className="p-2 text-green-400">{tx.status}</td>
-              <td className="p-2">{tx.date}</td>
+
+              <td
+                className={`p-2 ${
+                  tx.transactionType === 'Mint'
+                    ? 'text-green-500'
+                    : tx.transactionType === 'Burn'
+                    ? 'text-red-500'
+                    : tx.direction === 'incoming'
+                    ? 'text-green-500'
+                    : tx.direction === 'outgoing'
+                    ? 'text-red-500'
+                    : ''
+                }`}
+              >
+                {tx.amountToken != null
+                  ? Number(tx.amountToken).toFixed(2)
+                  : '-'}
+              </td>
+              <td className="p-2">
+                {tx.recipient ? (
+                  <>
+                    {tx.recipient.slice(0, 6)}...{tx.recipient.slice(-6)}
+                    {tx.recipient === walletAddress && ' (You)'}
+                  </>
+                ) : (
+                  '-'
+                )}
+              </td>
+
+              <td className="p-2">{tx.reference ?? '-'}</td>
+              <td className="p-2">{tx.status}</td>
+              <td className="p-2">{tx.transactionDateTime}</td>
             </tr>
           ))}
         </tbody>

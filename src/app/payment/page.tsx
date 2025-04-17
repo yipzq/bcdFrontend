@@ -14,16 +14,16 @@
 //   );
 // }
 
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import CheckoutPage from "@/app/components/CheckoutPage";
-import convertToSubcurrency from "@/lib/convertToSubcurrency";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+import React, { useState, useEffect } from 'react';
+import CheckoutPage from '@/app/components/CheckoutPage';
+import convertToSubcurrency from '@/lib/convertToSubcurrency';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 
 if (!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
-  throw new Error("NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not defined");
+  throw new Error('NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not defined');
 }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
@@ -34,23 +34,23 @@ export default function Payment() {
 
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem("totalAmount");
+      const storedData = localStorage.getItem('totalAmount');
 
       if (!storedData) {
-        setError("No payment data found. Please start a new deposit.");
+        setError('No payment data found. Please start a new deposit.');
         return;
       }
 
       const parsedAmount = parseFloat(storedData);
 
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        setError("Invalid deposit amount. Please enter a valid amount.");
+        setError('Invalid deposit amount. Please enter a valid amount.');
         return;
       }
 
       setTotalAmount(parsedAmount);
     } catch (err) {
-      setError("An error occurred while retrieving payment data.");
+      setError('An error occurred while retrieving payment data.');
     }
   }, []);
 
@@ -76,9 +76,9 @@ export default function Payment() {
         <Elements
           stripe={stripePromise}
           options={{
-            mode: "payment",
+            mode: 'payment',
             amount: convertToSubcurrency(totalAmount),
-            currency: "usd",
+            currency: 'usd',
           }}
         >
           <CheckoutPage amount={totalAmount} />
