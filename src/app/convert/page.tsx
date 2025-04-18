@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useBalance } from 'wagmi';
 import { useWallet } from '@/context/WalletContext';
 
 const TokenConverter: React.FC = () => {
@@ -14,8 +14,8 @@ const TokenConverter: React.FC = () => {
   const [error, setError] = useState<string>('');
   const exchangeRate = 1;
 
-  const { isConnected } = useAccount();
   const { walletAddress, tokenBalance, usdBalance } = useWallet();
+  const { isConnected, address } = useAccount();
 
   useEffect(() => {
     const fetchBalances = async () => {
