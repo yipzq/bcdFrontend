@@ -43,10 +43,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Connect } from './Connect';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ethers } from 'ethers';
-import { useWallet } from '@/context/WalletContext'; // Adjust the path if needed
+import { useWallet } from '@/context/WalletContext';
+import { useAccount } from 'wagmi';
 
 export function Header() {
   //const [accountDetails, setAccountDetails] = useState<any[] | null>(null);
@@ -60,6 +61,8 @@ export function Header() {
     usdBalance,
     setUsdBalance,
   } = useWallet();
+  const { isConnected, address } = useAccount();
+  const didMount = useRef(false);
 
   const router = useRouter();
 
@@ -80,7 +83,6 @@ export function Header() {
       if (accounts.length > 0) {
         const address = accounts[0].address;
         setWalletAddress(accounts[0].address);
-        console.log('Connected wallet address:', address);
         return address;
       } else {
         console.log('No wallet connected');
@@ -114,22 +116,49 @@ export function Header() {
     return Number(ethers.formatUnits(rawBalance, decimals));
   };
 
+  const fetchWalletAndTokenData = async () => {
+    const address = await getConnectedWalletAddress(); //get wallet address
+    if (address) {
+      getPageData(address); //get USD balance
+
+      const provider = new ethers.BrowserProvider(
+        window.ethereum as unknown as ethers.Eip1193Provider
+      );
+      const balance = await getTokenBalance(address, tokenAddress, provider); //get token balance
+      setTokenBalance(balance);
+    }
+  };
+
+  // useEffect(() => {
+  //   const fetchWalletAndTokenData = async () => {
+  //     const address = await getConnectedWalletAddress(); //get wallet address
+  //     if (address) {
+  //       getPageData(address); //get USD balance
+
+  //       const provider = new ethers.BrowserProvider(
+  //         window.ethereum as unknown as ethers.Eip1193Provider
+  //       );
+  //       const balance = await getTokenBalance(address, tokenAddress, provider); //get token balance
+  //       setTokenBalance(balance);
+  //     }
+  //   };
+
+  //   fetchWalletAndTokenData();
+  // }, []);
+
   useEffect(() => {
-    const fetchWalletAndTokenData = async () => {
-      const address = await getConnectedWalletAddress(); //get wallet address
-      if (address) {
-        getPageData(address); //get USD balance
-
-        const provider = new ethers.BrowserProvider(
-          window.ethereum as unknown as ethers.Eip1193Provider
-        );
-        const balance = await getTokenBalance(address, tokenAddress, provider); //get token balance
-        setTokenBalance(balance);
-      }
-    };
-
-    fetchWalletAndTokenData();
-  }, []);
+    //window.location.reload();
+    if (isConnected || !didMount.current) {
+      fetchWalletAndTokenData();
+    } else {
+      //remove user info after disconnect and return to home page
+      setWalletAddress(null);
+      setTokenBalance(0);
+      setUsdBalance(0);
+      router.push('/');
+    }
+    didMount.current = true;
+  }, [isConnected]);
 
   return (
     <nav className="flex justify-between items-center p-4 bg-gray-900 text-white w-full">
@@ -148,7 +177,7 @@ export function Header() {
 
       {/* Right Section - Align Right */}
       <div className="flex items-center space-x-3 ml-auto">
-        {walletAddress && (
+        {isConnected && (
           <div className="bg-gray-800 px-4 py-2 rounded-full shadow-md border border-gray-600 flex space-x-3 items-center">
             <span className="text-yellow-300 font-bold">USD {usdBalance}</span>
             <span className="text-purple-400 font-bold">

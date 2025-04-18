@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useWallet } from '@/context/WalletContext';
+//import { useAccount } from 'wagmi';
 
 interface Transaction {
   transactionID: number;
@@ -23,6 +24,7 @@ const TransactionsPage: React.FC = () => {
     []
   );
   const { walletAddress } = useWallet();
+  //const { isConnected } = useAccount();
 
   const transactions = [
     {
