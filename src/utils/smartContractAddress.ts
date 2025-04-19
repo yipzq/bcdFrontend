@@ -1,5 +1,8 @@
 // src/utils/smartContractAddress.ts
 
-export const tokenContractAddress =
-  process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS;
-export const ICOContractAddress = process.env.NEXT_PUBLIC_ICO_CONTRACT_ADDRESS;
+if (!process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS) {
+    throw new Error('NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS is not defined');
+  }
+  
+  export const tokenContractAddress: string = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS;
+  

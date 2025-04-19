@@ -56,37 +56,70 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { ethers } from 'ethers';
+import RemittanceToken from '@/abi/RemittanceToken.json';
+import { tokenContractAddress } from '@/utils/smartContractAddress';
+
+const RPC_URL = process.env.RPC_URL || 'http://127.0.0.1:8545';
+const PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY as string;
+const CONTRACT_ADDRESS = tokenContractAddress;
 
 export async function POST(request: NextRequest) {
   try {
     const { amount, walletAddress } = await request.json();
 
-    const querySql = `SELECT balance FROM useraccount WHERE walletAddress = ?`;
+    // Step 1: Check user balance
     const data = await query({
-      query: querySql,
+      query: `SELECT balance FROM useraccount WHERE walletAddress = ?`,
       values: [walletAddress],
     });
 
-    const balance = data.length > 0 ? data[0].balance : null;
-    const newBalance = Number(balance) - Number(amount);
+    if (data.length === 0) {
+      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    }
 
-    const updateSql = `UPDATE useraccount SET balance = ? WHERE walletAddress = ?`;
+    const currentBalance = Number(data[0].balance);
+    const newBalance = currentBalance - Number(amount);
+
+    if (newBalance < 0) {
+      return NextResponse.json(
+        { error: 'Insufficient USD balance' },
+        { status: 400 }
+      );
+    }
+
+    // Step 2: Update USD balance
     await query({
-      query: updateSql,
+      query: `UPDATE useraccount SET balance = ? WHERE walletAddress = ?`,
       values: [newBalance, walletAddress],
     });
 
-    return NextResponse.json(
-      { success: true, message: 'Balance updated' },
-      {
-        status: 200,
-      }
+    // Step 3: Call mintForUser from backend
+    const provider = new ethers.JsonRpcProvider(RPC_URL);
+    const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      RemittanceToken.abi,
+      wallet
     );
-  } catch (error) {
-    console.error('Internal Error:', error);
-    // Handle other errors (e.g., network issues, parsing errors)
+
+    console.log(
+      'Minting to:',
+      walletAddress,
+      'Amount (human readable):',
+      amount
+    );
+    const tx = await contract.mintForUser(walletAddress, Number(amount));
+    await tx.wait();
+
     return NextResponse.json(
-      { error: `Internal Server Error: ${error}` },
+      { success: true, message: 'Balance updated and tokens minted' },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Internal Error:', error);
+    return NextResponse.json(
+      { error: `Internal Server Error: ${error.message}` },
       { status: 500 }
     );
   }

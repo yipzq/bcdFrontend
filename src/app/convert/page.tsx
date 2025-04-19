@@ -40,7 +40,6 @@ const TokenConverter: React.FC = () => {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
 
-    // **Validation: Prevent negative values and non-numeric input**
     if (!/^\d*\.?\d*$/.test(value)) return;
 
     if (value === '') {
@@ -89,20 +88,7 @@ const TokenConverter: React.FC = () => {
     );
   };
 
-  const convertToToken = () => {
-    fetch('/api/update-user-balance', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount,
-        walletAddress,
-      }),
-    });
-  };
-
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!isConnected) {
       setError('Please connect to your wallet first.');
       return;
@@ -121,14 +107,39 @@ const TokenConverter: React.FC = () => {
     }
 
     if (fromToken === 'USD' && toToken === 'RMT') {
-      convertToToken();
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/update-user-balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: numericAmount,
+            walletAddress,
+          }),
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          setError(result.error || 'Failed to convert USD to RMT');
+          return;
+        }
+
+        setError('');
+        window.location.reload();
+      } catch (err: any) {
+        console.error('Conversion error:', err);
+        setError(err?.message || 'Unexpected error during conversion');
+      } finally {
+        setIsLoading(false);
+      }
+      return;
     }
 
-    setError('');
-    console.log(
-      `Converting ${amount} ${fromToken} to ${convertedAmount} ${toToken}`
-    );
-    window.location.reload();
+    // Optional: Keep RMT ➝ USD logic or move it to backend later
+    if (fromToken === 'RMT' && toToken === 'USD') {
+      setError('RMT to USD conversion is currently not supported in frontend.');
+    }
   };
 
   return (
@@ -187,9 +198,13 @@ const TokenConverter: React.FC = () => {
         <button
           className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
           onClick={handleConfirm}
-          disabled={!isConnected}
+          disabled={isLoading || !isConnected}
         >
-          {isConnected ? 'Confirm' : 'Connect Wallet First'}
+          {isLoading
+            ? 'Processing...'
+            : isConnected
+            ? 'Convert'
+            : 'Connect Wallet First'}
         </button>
 
         {error && <p className="text-red-500 mt-2">{error}</p>}
