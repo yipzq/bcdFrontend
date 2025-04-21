@@ -66,10 +66,6 @@ export function Header() {
 
   const router = useRouter();
 
-  const handleAdminClick = () => {
-    router.push('/admin/login');
-  };
-
   const getConnectedWalletAddress = async () => {
     if (typeof window !== 'undefined' && window.ethereum) {
       // Type assertion to Eip1193Provider
@@ -185,13 +181,6 @@ export function Header() {
             </span>
           </div>
         )}
-
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-blue-600 transition"
-          onClick={handleAdminClick}
-        >
-          Admin
-        </button>
 
         <Connect />
       </div>
