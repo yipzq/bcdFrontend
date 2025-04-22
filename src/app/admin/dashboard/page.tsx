@@ -26,7 +26,7 @@ export default function AdminDashboardPage() {
 
           // If not authenticated, redirect to login
           if (!res.ok) {
-            router.push('/admin/login');
+            router.push('/admin');
             return;
           }
 
@@ -35,7 +35,7 @@ export default function AdminDashboardPage() {
           setIsAuthenticated(true);
           sessionStorage.setItem('username', data.username);
         } catch {
-          router.push('/admin/login');
+          router.push('/admin');
         }
       };
 
@@ -46,7 +46,7 @@ export default function AdminDashboardPage() {
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     sessionStorage.removeItem('username'); // Remove username on logout
-    router.push('/admin/login'); // Redirect after logout
+    router.push('/'); // Redirect after logout
   };
 
   // Example transactions (needs database integration)
