@@ -136,9 +136,33 @@ const TokenConverter: React.FC = () => {
       return;
     }
 
-    // Optional: Keep RMT ➝ USD logic or move it to backend later
+    // RMT to USD
     if (fromToken === 'RMT' && toToken === 'USD') {
-      setError('RMT to USD conversion is currently not supported in frontend.');
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/burn-user-tokens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: numericAmount,
+            walletAddress,
+          }),
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+          setError(result.error || 'Failed to convert RMT to USD');
+          return;
+        }
+
+        setError('');
+        window.location.reload();
+      } catch (err: any) {
+        console.error('Burn error:', err);
+        setError(err?.message || 'Unexpected error during conversion');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
