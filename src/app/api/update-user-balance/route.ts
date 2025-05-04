@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   try {
     const { amount, walletAddress } = await request.json();
 
-    // Step 1: Check user balance
+    // Check user balance
     const data = await query({
       query: `SELECT balance FROM useraccount WHERE walletAddress = ?`,
       values: [walletAddress],
@@ -88,13 +88,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 2: Update USD balance
+    // Update USD balance
     await query({
       query: `UPDATE useraccount SET balance = ? WHERE walletAddress = ?`,
       values: [newBalance, walletAddress],
     });
 
-    // Step 3: Call mintForUser from backend
+    // Call mintForUser from backend
     const provider = new ethers.JsonRpcProvider(RPC_URL);
     const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
     const contract = new ethers.Contract(

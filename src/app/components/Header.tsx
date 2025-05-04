@@ -43,16 +43,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Connect } from './Connect';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ethers } from 'ethers';
 import { useWallet } from '@/context/WalletContext';
-import { useAccount } from 'wagmi';
+import { useAccount, useBalance } from 'wagmi';
+import { ethers } from 'ethers';
 
 export function Header() {
-  //const [accountDetails, setAccountDetails] = useState<any[] | null>(null);
-  //const [tokenBalance, setTokenBalance] = useState<number | null>(null);
-  const tokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
   const {
     walletAddress,
     setWalletAddress,
@@ -61,10 +58,22 @@ export function Header() {
     usdBalance,
     setUsdBalance,
   } = useWallet();
+
+  const tokenAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+
   const { isConnected, address } = useAccount();
-  const didMount = useRef(false);
+
+  const { data: balanceData } = useBalance({
+    address,
+    token: tokenAddress,
+    query: {
+      enabled: Boolean(address),
+      refetchInterval: 10_000, // refetch every 10s
+    },
+  });
 
   const router = useRouter();
+  const didMount = useRef(false);
 
   const getConnectedWalletAddress = async () => {
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -96,65 +105,25 @@ export function Header() {
     setUsdBalance(res.useraccounts[0].balance);
   }
 
-  const erc20ABI = [
-    'function balanceOf(address owner) view returns (uint256)',
-    'function decimals() view returns (uint8)',
-  ];
-
-  const getTokenBalance = async (
-    walletAddress: string,
-    tokenAddress: string,
-    provider: ethers.BrowserProvider
-  ) => {
-    const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, provider);
-    const rawBalance = await tokenContract.balanceOf(walletAddress);
-    const decimals = await tokenContract.decimals();
-    return Number(ethers.formatUnits(rawBalance, decimals));
-  };
-
-  const fetchWalletAndTokenData = async () => {
-    const address = await getConnectedWalletAddress(); //get wallet address
-    if (address) {
-      getPageData(address); //get USD balance
-
-      const provider = new ethers.BrowserProvider(
-        window.ethereum as unknown as ethers.Eip1193Provider
-      );
-      const balance = await getTokenBalance(address, tokenAddress, provider); //get token balance
-      setTokenBalance(balance);
-    }
-  };
-
-  // useEffect(() => {
-  //   const fetchWalletAndTokenData = async () => {
-  //     const address = await getConnectedWalletAddress(); //get wallet address
-  //     if (address) {
-  //       getPageData(address); //get USD balance
-
-  //       const provider = new ethers.BrowserProvider(
-  //         window.ethereum as unknown as ethers.Eip1193Provider
-  //       );
-  //       const balance = await getTokenBalance(address, tokenAddress, provider); //get token balance
-  //       setTokenBalance(balance);
-  //     }
-  //   };
-
-  //   fetchWalletAndTokenData();
-  // }, []);
-
   useEffect(() => {
-    //window.location.reload();
     if (isConnected || !didMount.current) {
-      fetchWalletAndTokenData();
+      if (address) {
+        setWalletAddress(address);
+        getPageData(address);
+        if (balanceData?.value) {
+          setTokenBalance(Number(balanceData.formatted));
+        }
+      }
     } else {
-      //remove user info after disconnect and return to home page
+      // on disconnect
       setWalletAddress(null);
       setTokenBalance(0);
       setUsdBalance(0);
       router.push('/');
     }
+
     didMount.current = true;
-  }, [isConnected]);
+  }, [isConnected, address, balanceData]);
 
   return (
     <nav className="flex justify-between items-center p-4 bg-gray-900 text-white w-full">
@@ -162,7 +131,6 @@ export function Header() {
         <Image src="/logo.png" alt="RMT Logo" width={40} height={35} />
       </Link>
 
-      {/* Move Navigation Links to the Left */}
       <div className="flex space-x-6 ml-7 font-bold">
         <Link href="/">Home</Link>
         <Link href="/deposit">Deposit</Link>
@@ -171,7 +139,6 @@ export function Header() {
         <Link href="/transaction">Transaction</Link>
       </div>
 
-      {/* Right Section - Align Right */}
       <div className="flex items-center space-x-3 ml-auto">
         {isConnected && (
           <div className="bg-gray-800 px-4 py-2 rounded-full shadow-md border border-gray-600 flex space-x-3 items-center">
@@ -181,7 +148,6 @@ export function Header() {
             </span>
           </div>
         )}
-
         <Connect />
       </div>
     </nav>
