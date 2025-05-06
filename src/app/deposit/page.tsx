@@ -139,19 +139,25 @@ const DepositToken: React.FC = () => {
   const router = useRouter();
   const { isConnected } = useAccount();
 
-  const depositAmount = parseFloat(amount.trim()); // Trim to avoid empty spaces
-  const processingFee = depositAmount * 0.02;
+  // Parse as integer instead of float
+  const depositAmount = parseInt(amount.trim()) || 0;
+  const processingFee = Math.floor(depositAmount * 0.02); // Use Math.floor to get whole number
   const totalAmount = depositAmount + processingFee;
 
-  const { walletAddress } = useWallet();
-
   const validateInput = (value: string) => {
+    // Check if the input is empty
     if (value.trim() === '') {
       setError('Amount cannot be empty.');
       return false;
     }
 
-    const numericValue = parseFloat(value);
+    // Only allow digits (whole numbers)
+    if (!/^\d+$/.test(value)) {
+      setError('Please enter an amount');
+      return false;
+    }
+
+    const numericValue = parseInt(value);
     if (isNaN(numericValue)) {
       setError('Please enter a valid number.');
       return false;
@@ -162,9 +168,9 @@ const DepositToken: React.FC = () => {
       return false;
     }
 
-    const computedTotal = numericValue + numericValue * 0.02;
-    if (computedTotal > 999999.99) {
-      setError('Total amount (including fee) cannot exceed 999,999.99 USD.');
+    const computedTotal = numericValue + Math.floor(numericValue * 0.02);
+    if (computedTotal > 999999) {
+      setError('Total amount (including fee) cannot exceed 999,999 USD.');
       return false;
     }
 
@@ -174,6 +180,12 @@ const DepositToken: React.FC = () => {
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+
+    // Only allow digits
+    if (value !== '' && !/^\d+$/.test(value)) {
+      return;
+    }
+
     setAmount(value);
     validateInput(value); // Validate while typing
   };
@@ -203,7 +215,9 @@ const DepositToken: React.FC = () => {
             className="bg-transparent text-2xl w-full focus:outline-none text-white"
             value={amount}
             onChange={handleAmountChange}
-            min="0"
+            min="1"
+            step="1" // Ensures only whole numbers
+            placeholder="Enter an amount"
           />
           <span className="text-gray-400">USD</span>
         </div>
@@ -211,21 +225,15 @@ const DepositToken: React.FC = () => {
         <div className="bg-gray-800 p-4 rounded-lg mt-4">
           <div className="flex justify-between text-gray-400">
             <span>Deposit amount</span>
-            <span>
-              {isNaN(depositAmount) ? '0.00' : depositAmount.toFixed(2)} USD
-            </span>
+            <span>{isNaN(depositAmount) ? '0' : depositAmount} USD</span>
           </div>
           <div className="flex justify-between text-gray-400 mt-2">
             <span>Processing fee (2%)</span>
-            <span>
-              {isNaN(processingFee) ? '0.00' : processingFee.toFixed(2)} USD
-            </span>
+            <span>{isNaN(processingFee) ? '0' : processingFee} USD</span>
           </div>
           <div className="flex justify-between text-gray-200 mt-2 font-semibold">
             <span>Total amount to be paid</span>
-            <span>
-              {isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)} USD
-            </span>
+            <span>{isNaN(totalAmount) ? '0' : totalAmount} USD</span>
           </div>
         </div>
 

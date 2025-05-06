@@ -4,11 +4,16 @@ import { useAccount } from "wagmi";
 
 const SendToken: React.FC = () => {
   const [walletAddress, setWalletAddress] = useState<string>("");
-  const [amount, setAmount] = useState<string>("0.0");
+  const [amount, setAmount] = useState<string>("0");
   const [balance, setBalance] = useState<number>(100); // Example balance (should be fetched from the blockchain)
   const [error, setError] = useState<string>("");
 
   const { isConnected } = useAccount();
+
+  // Calculate processing fee (2%)
+  const parsedAmount = parseFloat(amount) || 0;
+  const processingFee = parsedAmount * 0.02;
+  const totalAmount = parsedAmount + processingFee;
 
   // Ethereum Address Regex (basic check)
   const isValidEthereumAddress = (address: string) =>
@@ -19,8 +24,6 @@ const SendToken: React.FC = () => {
   };
 
   const handleConfirm = () => {
-    const parsedAmount = parseFloat(amount);
-
     if (!isConnected) {
       setError("Please connect to your wallet first.");
       return;
@@ -36,14 +39,14 @@ const SendToken: React.FC = () => {
       return;
     }
 
-    if (parsedAmount > balance) {
-      setError("Insufficient balance.");
+    if (totalAmount > balance) {
+      setError("Insufficient balance. Remember to account for the 2% processing fee.");
       return;
     }
 
     // Clear error if everything is valid
     setError("");
-    alert(`Sending ${parsedAmount} RMT to ${walletAddress}`);
+    alert(`Sending ${parsedAmount.toFixed(2)} RMT to ${walletAddress} (Total with fee: ${totalAmount.toFixed(2)} RMT)`);
   };
 
   return (
@@ -79,6 +82,22 @@ const SendToken: React.FC = () => {
           <p className="text-gray-500 text-sm">
             Balance: {balance.toFixed(2)} RMT
           </p>
+        </div>
+
+        {/* Fee Details */}
+        <div className="bg-gray-800 p-4 rounded-lg mt-4 mb-4">
+          <div className="flex justify-between text-gray-400">
+            <span>Send amount</span>
+            <span>{isNaN(parsedAmount) ? "0.00" : parsedAmount.toFixed(2)} RMT</span>
+          </div>
+          <div className="flex justify-between text-gray-400 mt-2">
+            <span>Processing fee (2%)</span>
+            <span>{isNaN(processingFee) ? "0.00" : processingFee.toFixed(2)} RMT</span>
+          </div>
+          <div className="flex justify-between text-gray-200 mt-2 font-semibold">
+            <span>Total amount to be deducted</span>
+            <span>{isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)} RMT</span>
+          </div>
         </div>
 
         {/* Confirm Button */}
