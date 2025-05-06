@@ -74,6 +74,7 @@ export function Header() {
 
   const router = useRouter();
   const didMount = useRef(false);
+  const prevConnected = useRef(isConnected);
 
   const getConnectedWalletAddress = async () => {
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -106,7 +107,7 @@ export function Header() {
   }
 
   useEffect(() => {
-    if (isConnected || !didMount.current) {
+    if (isConnected) {
       if (address) {
         setWalletAddress(address);
         getPageData(address);
@@ -114,15 +115,15 @@ export function Header() {
           setTokenBalance(Number(balanceData.formatted));
         }
       }
-    } else {
-      // on disconnect
+    } else if (prevConnected.current) {
+      // Only redirect if the user was previously connected and now is disconnected
       setWalletAddress(null);
       setTokenBalance(0);
       setUsdBalance(0);
       router.push('/');
     }
-
-    didMount.current = true;
+    prevConnected.current = isConnected;
+    // eslint-disable-next-line
   }, [isConnected, address, balanceData]);
 
   return (
