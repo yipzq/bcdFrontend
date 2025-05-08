@@ -1,5 +1,4 @@
-// // src/app/admin/dashboard/page.tsx
-
+// src/app/admin/dashboard/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -16,6 +15,10 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const storedUsername = sessionStorage.getItem('username');
+
+    const transactionTypeMap = {
+      5: 'Withdrawal',
+    };
 
     if (storedUsername) {
       setUsername(storedUsername);
@@ -102,6 +105,10 @@ export default function AdminDashboardPage() {
     return matchStatus && matchDate && matchToken;
   });
 
+  const transactionTypeMap = {
+    5: 'Withdrawal',
+  };
+
   return (
     <div className="min-h-screen bg-black text-white p-6 relative">
       <button
@@ -162,7 +169,12 @@ export default function AdminDashboardPage() {
           {filteredTransactions.length > 0 ? (
             filteredTransactions.map((tx, index) => (
               <tr key={index} className="border-b border-gray-700">
-                <td className="p-2">{tx.type}</td>
+                <td className="p-2">
+                  {/* Displaying the mapped transaction type */}
+                  {transactionTypeMap[
+                    tx.type as keyof typeof transactionTypeMap
+                  ] || 'Unknown'}
+                </td>
                 <td className="p-2 text-green-500">{tx.amountUSD ?? '-'}</td>
                 <td className="p-2 text-purple-400">
                   {tx.amountToken != null
@@ -190,22 +202,22 @@ export default function AdminDashboardPage() {
                 <td className="p-2">{tx.date}</td>
                 <td className="p-2">
                   {tx.status === 'Pending' ? (
-                    <>
+                    <div className="flex gap-2 justify-center">
                       <button
-                        className="bg-green-600 px-3 py-1 rounded mr-2 hover:bg-green-500"
+                        className="bg-green-600 px-2 py-1 rounded hover:bg-green-500 text-sm"
                         onClick={() => handleApproval(tx.id)}
                       >
                         Approve
                       </button>
                       <button
-                        className="bg-red-600 px-3 py-1 rounded hover:bg-red-500"
+                        className="bg-red-600 px-2 py-1 rounded hover:bg-red-500 text-sm"
                         onClick={() => handleReject(tx.id)}
                       >
                         Reject
                       </button>
-                    </>
+                    </div>
                   ) : (
-                    'Not Applicable'
+                    'N/A'
                   )}
                 </td>
               </tr>
