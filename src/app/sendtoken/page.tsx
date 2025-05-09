@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useAccount, useWalletClient, erc20ABI } from "wagmi";
-import { parseUnits } from "viem";
+import { useAccount } from "wagmi";
 
 const SendToken: React.FC = () => {
   const [walletAddress, setWalletAddress] = useState<string>("");
@@ -10,7 +9,6 @@ const SendToken: React.FC = () => {
   const [error, setError] = useState<string>("");
 
   const { isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
 
   // Calculate processing fee (2%)
   const parsedAmount = parseFloat(amount) || 0;
@@ -23,31 +21,6 @@ const SendToken: React.FC = () => {
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
-  };
-
-  const sendToken = async () => {
-    if (!walletClient) {
-      setError("Wallet client not available.");
-      return;
-    }
-
-    try {
-      const tokenAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // 🔁 Replace this
-      const decimals = 18; // 🔁 Replace if needed
-
-      const txHash = await walletClient.writeContract({
-        address: tokenAddress as `0x${string}`,
-        abi: erc20ABI,
-        functionName: "transfer",
-        args: [walletAddress, parseUnits(parsedAmount.toString(), decimals)],
-      });
-
-      setError("");
-      alert(`Transaction sent! Hash: ${txHash}`);
-    } catch (err: any) {
-      console.error(err);
-      setError("Failed to send tokens. Please try again.");
-    }
   };
 
   const handleConfirm = () => {
@@ -67,21 +40,13 @@ const SendToken: React.FC = () => {
     }
 
     if (totalAmount > balance) {
-      setError(
-        "Insufficient balance. Remember to account for the 2% processing fee."
-      );
+      setError("Insufficient balance. Remember to account for the 2% processing fee.");
       return;
     }
 
     // Clear error if everything is valid
     setError("");
-    alert(
-      `Sending ${parsedAmount.toFixed(
-        2
-      )} RMT to ${walletAddress} (Total with fee: ${totalAmount.toFixed(
-        2
-      )} RMT)`
-    );
+    alert(`Sending ${parsedAmount.toFixed(2)} RMT to ${walletAddress} (Total with fee: ${totalAmount.toFixed(2)} RMT)`);
   };
 
   return (
@@ -123,21 +88,15 @@ const SendToken: React.FC = () => {
         <div className="bg-gray-800 p-4 rounded-lg mt-4 mb-4">
           <div className="flex justify-between text-gray-400">
             <span>Send amount</span>
-            <span>
-              {isNaN(parsedAmount) ? "0.00" : parsedAmount.toFixed(2)} RMT
-            </span>
+            <span>{isNaN(parsedAmount) ? "0.00" : parsedAmount.toFixed(2)} RMT</span>
           </div>
           <div className="flex justify-between text-gray-400 mt-2">
             <span>Processing fee (2%)</span>
-            <span>
-              {isNaN(processingFee) ? "0.00" : processingFee.toFixed(2)} RMT
-            </span>
+            <span>{isNaN(processingFee) ? "0.00" : processingFee.toFixed(2)} RMT</span>
           </div>
           <div className="flex justify-between text-gray-200 mt-2 font-semibold">
             <span>Total amount to be deducted</span>
-            <span>
-              {isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)} RMT
-            </span>
+            <span>{isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)} RMT</span>
           </div>
         </div>
 
