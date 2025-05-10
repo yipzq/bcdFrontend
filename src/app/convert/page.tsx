@@ -1,7 +1,11 @@
 'use client';
+
 import React, { useEffect, useState } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import { useWallet } from '@/context/WalletContext';
+import { print } from '@/utils/toast';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const TokenConverter: React.FC = () => {
   const [amount, setAmount] = useState<string>('0');
@@ -57,7 +61,9 @@ const TokenConverter: React.FC = () => {
 
     const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
     if (numericValue > maxBalance) {
-      setError(`Insufficient balance. Max: ${Math.floor(maxBalance)} ${fromToken}`);
+      setError(
+        `Insufficient balance. Max: ${Math.floor(maxBalance)} ${fromToken}`
+      );
       return;
     }
 
@@ -103,7 +109,9 @@ const TokenConverter: React.FC = () => {
 
     const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
     if (numericAmount > maxBalance) {
-      setError(`Insufficient balance. Max: ${Math.floor(maxBalance)} ${fromToken}`);
+      setError(
+        `Insufficient balance. Max: ${Math.floor(maxBalance)} ${fromToken}`
+      );
       return;
     }
 
@@ -126,8 +134,14 @@ const TokenConverter: React.FC = () => {
           return;
         }
 
-        setError('');
-        window.location.reload();
+        // Show success toast notification
+        print(
+          `Successfully converted ${numericAmount} USD to ${convertedAmount} RMT`,
+          'success'
+        );
+
+        // Wait a moment for the toast to be visible before refreshing
+        setTimeout(() => window.location.reload(), 2000);
       } catch (err: any) {
         console.error('Conversion error:', err);
         setError(err?.message || 'Unexpected error during conversion');
@@ -156,8 +170,14 @@ const TokenConverter: React.FC = () => {
           return;
         }
 
-        setError('');
-        window.location.reload();
+        // Show success toast notification
+        print(
+          `Successfully converted ${numericAmount} RMT to ${convertedAmount} USD`,
+          'success'
+        );
+
+        // Wait a moment for the toast to be visible before refreshing
+        setTimeout(() => window.location.reload(), 2000);
       } catch (err: any) {
         console.error('Burn error:', err);
         setError(err?.message || 'Unexpected error during conversion');
@@ -169,6 +189,19 @@ const TokenConverter: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center p-10">
+      {/* Add ToastContainer to render notifications */}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <h1 className="text-3xl font-semibold">Convert Token</h1>
 
       <div className="mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-xl">
@@ -192,7 +225,8 @@ const TokenConverter: React.FC = () => {
             <span className="text-gray-400">{fromToken}</span>
           </div>
           <p className="text-gray-500 text-sm">
-            Balance: {Math.floor(usdBalance)} USD / {Math.floor(tokenBalance)} RMT
+            Balance: {Math.floor(usdBalance)} USD / {Math.floor(tokenBalance)}{' '}
+            RMT
           </p>
         </div>
 
@@ -217,7 +251,8 @@ const TokenConverter: React.FC = () => {
             <span className="text-gray-400">{toToken}</span>
           </div>
           <p className="text-gray-500 text-sm">
-            Balance: {Math.floor(usdBalance)} USD / {Math.floor(tokenBalance)} RMT
+            Balance: {Math.floor(usdBalance)} USD / {Math.floor(tokenBalance)}{' '}
+            RMT
           </p>
         </div>
 
