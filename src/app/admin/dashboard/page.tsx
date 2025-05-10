@@ -1,5 +1,4 @@
 // src/app/admin/dashboard/page.tsx
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -9,22 +8,27 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [tokenFilter, setTokenFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [dateFilter, setDateFilter] = useState('');
 
   useEffect(() => {
-   // Check if the username is stored in sessionStorage
-   const storedUsername = sessionStorage.getItem('username');
+    const storedUsername = sessionStorage.getItem('username');
 
-   if (storedUsername) {
-     setUsername(storedUsername);
-     setIsAuthenticated(true);
+    const transactionTypeMap = {
+      5: 'Withdrawal',
+    };
+
+    if (storedUsername) {
+      setUsername(storedUsername);
+      setIsAuthenticated(true);
+      fetchTransactions();
     } else {
-
       const checkLogin = async () => {
         try {
-          // Verify login status by sending a request to the backend
           const res = await fetch('/api/admin/verify', { method: 'POST' });
 
-          // If not authenticated, redirect to login
           if (!res.ok) {
             router.push('/admin');
             return;
@@ -34,6 +38,7 @@ export default function AdminDashboardPage() {
           setUsername(data.username);
           setIsAuthenticated(true);
           sessionStorage.setItem('username', data.username);
+          fetchTransactions();
         } catch {
           router.push('/admin');
         }
@@ -43,33 +48,66 @@ export default function AdminDashboardPage() {
     }
   }, [router]);
 
-  const handleLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
-    sessionStorage.removeItem('username'); // Remove username on logout
-    router.push('/'); // Redirect after logout
+  const fetchTransactions = async () => {
+    try {
+      const res = await fetch('/api/admin/transactions');
+      const data = await res.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+    }
   };
 
-  // Example transactions (needs database integration)
-  const transactions = [
-    {
-      type: 'RMT',
-      network: 'TRC20',
-      amount: 17100,
-      sender: 'TGHjB4kv...S9kF0MxT',
-      recipient: 'TLWpBoko...RJaVgCTk',
-      status: 'Done',
-      date: '2024-10-14 18:12:45',
-    },
-    {
-      type: 'USD',
-      network: 'TON',
-      amount: 7.0,
-      sender: 'EQK9SdfD...u9Tbk72jD',
-      recipient: 'EQDpZ9Hq...u0Bk12n9D',
-      status: 'Pending',
-      date: '2024-10-14 15:50:23',
-    },
-  ];
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    sessionStorage.removeItem('username');
+    router.push('/admin');
+  };
+
+  const handleApproval = async (transactionId: number) => {
+    try {
+      await fetch(`/api/admin/transactions/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactionId }),
+      });
+      fetchTransactions();
+    } catch (error) {
+      console.error('Approval failed:', error);
+    }
+  };
+
+  const handleReject = async (transactionId: number) => {
+    try {
+      await fetch(`/api/admin/transactions/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactionId }),
+      });
+      fetchTransactions();
+    } catch (error) {
+      console.error('Rejection failed:', error);
+    }
+  };
+
+  const filteredTransactions = transactions.filter((tx) => {
+    const txDate = tx.date?.split('T')[0] ?? '';
+
+    const matchStatus = statusFilter === 'All' || tx.status === statusFilter;
+    const matchDate = dateFilter === '' || txDate === dateFilter;
+    const matchToken =
+      tokenFilter === 'All'
+        ? true
+        : tokenFilter === 'USD'
+        ? tx.amountUSD != null
+        : tx.amountToken != null;
+
+    return matchStatus && matchDate && matchToken;
+  });
+
+  const transactionTypeMap = {
+    5: 'Withdrawal',
+  };
 
   return (
     <div className="min-h-screen bg-black text-white p-6 relative">
@@ -86,23 +124,40 @@ export default function AdminDashboardPage() {
 
       {/* Filters */}
       <div className="flex gap-4 mb-4">
-        <select className="bg-gray-800 p-2 rounded">
-          <option>RMT</option>
-          <option>USD</option>
+        <select
+          className="bg-gray-800 p-2 rounded"
+          value={tokenFilter}
+          onChange={(e) => setTokenFilter(e.target.value)}
+        >
+          <option value="All">All Types</option>
+          <option value="RMT">RMT</option>
+          <option value="USD">USD</option>
         </select>
-        <select className="bg-gray-800 p-2 rounded">
-          <option>Status</option>
-          <option>Pending</option>
-          <option>Done</option>
+        <select
+          className="bg-gray-800 p-2 rounded"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="All">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Completed">Completed</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
         </select>
-        <input type="date" className="bg-gray-800 p-2 rounded" />
+        <input
+          type="date"
+          className="bg-gray-800 p-2 rounded"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+        />
       </div>
 
       <table className="w-full mt-4 border-collapse text-center">
         <thead>
           <tr className="bg-gray-800">
             <th className="p-2">Type</th>
-            <th className="p-2">Amount</th>
+            <th className="p-2">USD</th>
+            <th className="p-2">RMT</th>
             <th className="p-2">Sender</th>
             <th className="p-2">Recipient</th>
             <th className="p-2">Status</th>
@@ -111,38 +166,69 @@ export default function AdminDashboardPage() {
           </tr>
         </thead>
         <tbody>
-          {transactions.map((tx, index) => (
-            <tr key={index} className="border-b border-gray-700">
-              <td className="p-2">{tx.type}</td>
-              <td className="p-2">{tx.amount}</td>
-              <td className="p-2">{tx.sender}</td>
-              <td className="p-2">{tx.recipient}</td>
-              <td className="p-2">
-                {tx.status === 'Done' ? (
-                  <span className="text-green-400">{tx.status}</span>
-                ) : tx.status === 'Pending' ? (
-                  <span className="text-yellow-400">{tx.status}</span>
-                ) : (
-                  <span>{tx.status}</span>
-                )}
-              </td>
-              <td className="p-2">{tx.date}</td>
-              <td className="p-2">
-                <button
-                  className="bg-green-600 px-3 py-1 rounded mr-2 hover:bg-green-500"
-                  onClick={() => console.log('Approve clicked')}
-                >
-                  Approve
-                </button>
-                <button
-                  className="bg-red-600 px-3 py-1 rounded hover:bg-red-500"
-                  onClick={() => console.log('Reject clicked')}
-                >
-                  Reject
-                </button>
+          {filteredTransactions.length > 0 ? (
+            filteredTransactions.map((tx, index) => (
+              <tr key={index} className="border-b border-gray-700">
+                <td className="p-2">
+                  {/* Displaying the mapped transaction type */}
+                  {transactionTypeMap[
+                    tx.type as keyof typeof transactionTypeMap
+                  ] || 'Unknown'}
+                </td>
+                <td className="p-2 text-green-500">{tx.amountUSD ?? '-'}</td>
+                <td className="p-2 text-purple-400">
+                  {tx.amountToken != null
+                    ? Number(tx.amountToken).toFixed(2)
+                    : '-'}
+                </td>
+                <td className="p-2">{tx.sender ?? '-'}</td>
+                <td className="p-2">
+                  {tx.recipient
+                    ? `${tx.recipient.slice(0, 6)}...${tx.recipient.slice(-6)}`
+                    : '-'}
+                </td>
+                <td className="p-2">
+                  {tx.status === 'Pending' ? (
+                    <span className="text-yellow-400">{tx.status}</span>
+                  ) : tx.status === 'Completed' || tx.status === 'Approved' ? (
+                    <span className="text-green-400">{tx.status}</span>
+                  ) : tx.status === 'Rejected' ? (
+                    <span className="text-red-500">{tx.status}</span>
+                  ) : (
+                    <span>{tx.status}</span>
+                  )}
+                </td>
+
+                <td className="p-2">{tx.date}</td>
+                <td className="p-2">
+                  {tx.status === 'Pending' ? (
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        className="bg-green-600 px-2 py-1 rounded hover:bg-green-500 text-sm"
+                        onClick={() => handleApproval(tx.id)}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="bg-red-600 px-2 py-1 rounded hover:bg-red-500 text-sm"
+                        onClick={() => handleReject(tx.id)}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  ) : (
+                    'N/A'
+                  )}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={8} className="p-4 text-gray-400">
+                No transactions found for selected filter.
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

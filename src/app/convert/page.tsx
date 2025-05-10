@@ -1,11 +1,15 @@
 'use client';
+
 import React, { useEffect, useState } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import { useWallet } from '@/context/WalletContext';
+import { print } from '@/utils/toast';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const TokenConverter: React.FC = () => {
-  const [amount, setAmount] = useState<string>('0.0');
-  const [convertedAmount, setConvertedAmount] = useState<string>('0.0');
+  const [amount, setAmount] = useState<string>('0');
+  const [convertedAmount, setConvertedAmount] = useState<string>('0');
   const [balanceUSD, setBalanceUSD] = useState<number>(0);
   const [balanceRMT, setBalanceRMT] = useState<number>(0);
   const [fromToken, setFromToken] = useState<'USD' | 'RMT'>('USD');
@@ -23,8 +27,8 @@ const TokenConverter: React.FC = () => {
       try {
         const response = await fetch('/api/balances');
         const data = await response.json();
-        setBalanceUSD(data.usdBalance);
-        setBalanceRMT(data.rmtBalance);
+        setBalanceUSD(Math.floor(data.usdBalance));
+        setBalanceRMT(Math.floor(data.rmtBalance));
       } catch (error) {
         console.error('Error fetching balances:', error);
         setBalanceUSD(0);
@@ -40,15 +44,16 @@ const TokenConverter: React.FC = () => {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
 
-    if (!/^\d*\.?\d*$/.test(value)) return;
+    // Only allow whole numbers
+    if (!/^\d*$/.test(value)) return;
 
     if (value === '') {
       setAmount('');
-      setConvertedAmount('0.0');
+      setConvertedAmount('0');
       return;
     }
 
-    const numericValue = parseFloat(value);
+    const numericValue = parseInt(value);
     if (numericValue < 0) {
       setError('Amount cannot be negative.');
       return;
@@ -56,7 +61,9 @@ const TokenConverter: React.FC = () => {
 
     const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
     if (numericValue > maxBalance) {
-      setError(`Insufficient balance. Max: ${maxBalance} ${fromToken}`);
+      setError(
+        `Insufficient balance. Max: ${Math.floor(maxBalance)} ${fromToken}`
+      );
       return;
     }
 
@@ -64,8 +71,8 @@ const TokenConverter: React.FC = () => {
     setAmount(value);
     setConvertedAmount(
       fromToken === 'USD' && toToken === 'RMT'
-        ? (numericValue * exchangeRate).toFixed(2)
-        : (numericValue / exchangeRate).toFixed(2)
+        ? Math.floor(numericValue * exchangeRate).toString()
+        : Math.floor(numericValue / exchangeRate).toString()
     );
   };
 
@@ -80,11 +87,11 @@ const TokenConverter: React.FC = () => {
   const handleMaxClick = () => {
     const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
     setError('');
-    setAmount(maxBalance.toString());
+    setAmount(Math.floor(maxBalance).toString());
     setConvertedAmount(
       fromToken === 'USD' && toToken === 'RMT'
-        ? (maxBalance * exchangeRate).toFixed(2)
-        : (maxBalance / exchangeRate).toFixed(2)
+        ? Math.floor(maxBalance * exchangeRate).toString()
+        : Math.floor(maxBalance / exchangeRate).toString()
     );
   };
 
@@ -94,7 +101,7 @@ const TokenConverter: React.FC = () => {
       return;
     }
 
-    const numericAmount = parseFloat(amount);
+    const numericAmount = parseInt(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
       setError('Please enter a valid amount.');
       return;
@@ -102,7 +109,9 @@ const TokenConverter: React.FC = () => {
 
     const maxBalance = fromToken === 'USD' ? usdBalance : tokenBalance;
     if (numericAmount > maxBalance) {
-      setError(`Insufficient balance. Max: ${maxBalance} ${fromToken}`);
+      setError(
+        `Insufficient balance. Max: ${Math.floor(maxBalance)} ${fromToken}`
+      );
       return;
     }
 
@@ -125,8 +134,14 @@ const TokenConverter: React.FC = () => {
           return;
         }
 
-        setError('');
-        window.location.reload();
+        // Show success toast notification
+        print(
+          `Successfully converted ${numericAmount} USD to ${convertedAmount} RMT`,
+          'success'
+        );
+
+        // Wait a moment for the toast to be visible before refreshing
+        setTimeout(() => window.location.reload(), 2000);
       } catch (err: any) {
         console.error('Conversion error:', err);
         setError(err?.message || 'Unexpected error during conversion');
@@ -155,8 +170,14 @@ const TokenConverter: React.FC = () => {
           return;
         }
 
-        setError('');
-        window.location.reload();
+        // Show success toast notification
+        print(
+          `Successfully converted ${numericAmount} RMT to ${convertedAmount} USD`,
+          'success'
+        );
+
+        // Wait a moment for the toast to be visible before refreshing
+        setTimeout(() => window.location.reload(), 2000);
       } catch (err: any) {
         console.error('Burn error:', err);
         setError(err?.message || 'Unexpected error during conversion');
@@ -168,6 +189,19 @@ const TokenConverter: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center p-10">
+      {/* Add ToastContainer to render notifications */}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <h1 className="text-3xl font-semibold">Convert Token</h1>
 
       <div className="mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-xl">
@@ -180,6 +214,7 @@ const TokenConverter: React.FC = () => {
               value={amount}
               onChange={handleAmountChange}
               min="0"
+              step="1" // Forces whole numbers
             />
             <button
               className="text-blue-500 px-3 py-1"
@@ -190,7 +225,8 @@ const TokenConverter: React.FC = () => {
             <span className="text-gray-400">{fromToken}</span>
           </div>
           <p className="text-gray-500 text-sm">
-            Balance: {usdBalance} USD / {tokenBalance} RMT
+            Balance: {Math.floor(usdBalance)} USD / {Math.floor(tokenBalance)}{' '}
+            RMT
           </p>
         </div>
 
@@ -215,7 +251,8 @@ const TokenConverter: React.FC = () => {
             <span className="text-gray-400">{toToken}</span>
           </div>
           <p className="text-gray-500 text-sm">
-            Balance: {usdBalance} USD / {tokenBalance} RMT
+            Balance: {Math.floor(usdBalance)} USD / {Math.floor(tokenBalance)}{' '}
+            RMT
           </p>
         </div>
 
