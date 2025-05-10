@@ -1,19 +1,43 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
+import { useWallet } from "@/context/WalletContext";
+import { print } from "@/utils/toast";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const SendToken: React.FC = () => {
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [amount, setAmount] = useState<string>("0");
-  const [balance, setBalance] = useState<number>(100); // Example balance (should be fetched from the blockchain)
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { isConnected } = useAccount();
+  const { walletAddress: connectedWalletAddress, tokenBalance } = useWallet();
 
-  // Calculate processing fee (2%)
+  // Calculate processing fee 
   const parsedAmount = parseFloat(amount) || 0;
-  const processingFee = parsedAmount * 0.02;
+  const processingFee = 1; // Fixed 1 RMT fee
   const totalAmount = parsedAmount + processingFee;
+
+  // Fetch token balance when component mounts or wallet changes
+  useEffect(() => {
+    const fetchTokenBalance = async () => {
+      if (!isConnected || !connectedWalletAddress) return;
+      
+      setIsLoading(true);
+      try {
+        // Balance is available 
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching token balance:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchTokenBalance();
+  }, [isConnected, connectedWalletAddress]);
 
   // Ethereum Address Regex (basic check)
   const isValidEthereumAddress = (address: string) =>
@@ -23,34 +47,78 @@ const SendToken: React.FC = () => {
     setAmount(e.target.value);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!isConnected) {
       setError("Please connect to your wallet first.");
       return;
     }
-
+  
     if (!walletAddress || !isValidEthereumAddress(walletAddress)) {
       setError("Please enter a valid Ethereum wallet address.");
       return;
     }
-
+  
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setError("Please enter a valid amount greater than zero.");
       return;
     }
-
-    if (totalAmount > balance) {
-      setError("Insufficient balance. Remember to account for the 2% processing fee.");
+  
+    if (totalAmount > tokenBalance) {
+      setError("Insufficient balance");
       return;
     }
-
-    // Clear error if everything is valid
+  
     setError("");
-    alert(`Sending ${parsedAmount.toFixed(2)} RMT to ${walletAddress} (Total with fee: ${totalAmount.toFixed(2)} RMT)`);
+    setIsLoading(true);
+    
+    try {
+      const res = await fetch('/api/send-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parsedAmount,
+          senderWalletAddress: connectedWalletAddress,
+          recipientWalletAddress: walletAddress,
+        }),
+      });
+  
+      const result = await res.json();
+      
+      if (!res.ok) {
+        setError(result.error || 'Failed to send tokens');
+        return;
+      }
+  
+      // Success - using toast instead of alert
+      print(`Successfully sent ${parsedAmount.toFixed(2)} RMT to ${walletAddress}`, 'success');
+      
+      // Wait a moment for the toast to be visible before refreshing
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (err: any) {
+      console.error('Send token error:', err);
+      print(err?.message || 'Unexpected error while sending tokens', 'error');
+      setError(err?.message || 'Unexpected error while sending tokens');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center p-10">
+      {/* Add ToastContainer to render notifications */}
+      <ToastContainer 
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+      
       <h1 className="text-3xl font-semibold">Send Token</h1>
       <div className="mt-6 w-full max-w-lg bg-gray-900 p-6 rounded-xl">
         {/* Wallet Address Input */}
@@ -80,33 +148,38 @@ const SendToken: React.FC = () => {
             <span className="text-gray-400">RMT</span>
           </div>
           <p className="text-gray-500 text-sm">
-            Balance: {balance.toFixed(2)} RMT
+            Balance: {isLoading ? "Loading..." : `${Math.floor(tokenBalance).toFixed(2)} RMT`}
           </p>
         </div>
-
-        {/* Fee Details */}
-        <div className="bg-gray-800 p-4 rounded-lg mt-4 mb-4">
-          <div className="flex justify-between text-gray-400">
-            <span>Send amount</span>
-            <span>{isNaN(parsedAmount) ? "0.00" : parsedAmount.toFixed(2)} RMT</span>
+        
+        {/* Add fee information display */}
+        <div className="mt-4 p-4 border border-gray-700 rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Transfer amount</span>
+            <span>{parsedAmount.toFixed(2)} RMT</span>
           </div>
-          <div className="flex justify-between text-gray-400 mt-2">
-            <span>Processing fee (2%)</span>
-            <span>{isNaN(processingFee) ? "0.00" : processingFee.toFixed(2)} RMT</span>
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-gray-400">Network fee</span>
+            <span>{processingFee.toFixed(2)} RMT</span>
           </div>
-          <div className="flex justify-between text-gray-200 mt-2 font-semibold">
-            <span>Total amount to be deducted</span>
-            <span>{isNaN(totalAmount) ? "0.00" : totalAmount.toFixed(2)} RMT</span>
+          <div className="border-t border-gray-700 my-2"></div>
+          <div className="flex justify-between items-center font-semibold">
+            <span>Total</span>
+            <span>{totalAmount.toFixed(2)} RMT</span>
           </div>
         </div>
-
+        
         {/* Confirm Button */}
         <button
           className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
-          disabled={!isConnected}
+          disabled={!isConnected || isLoading}
           onClick={handleConfirm}
         >
-          {isConnected ? "Confirm" : "Connect Wallet First"}
+          {isLoading 
+            ? "Loading..." 
+            : isConnected 
+              ? "Confirm" 
+              : "Connect Wallet First"}
         </button>
 
         {/* Error Message */}
