@@ -68,7 +68,7 @@ export function Header() {
     token: tokenAddress,
     query: {
       enabled: Boolean(address),
-      refetchInterval: 10_000, // refetch every 10s
+      refetchInterval: 10_000, // refetch every 10sssssssssssss
     },
   });
 
