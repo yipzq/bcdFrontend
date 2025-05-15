@@ -20,32 +20,48 @@ const getInput = (prompt) => {
 
 async function createAdmin() {
   try {
-    // Get username and password using readline
-    const username = await getInput('Enter username: ');
-    const password = await getInput('Enter password: ');
+    // Database connection
+    const connection = await mysql.createConnection({
+      host: process.env.DATABASE_HOST || 'localhost',
+      user: process.env.DATABASE_USER || 'root',
+      password: process.env.DATABASE_PASSWORD || '',
+      database: process.env.DATABASE_NAME || 'bcd',
+    });
 
-    if (!username || !password) {
-      console.log('Username and password are required.');
-      rl.close();
-      return;
+    let username;
+    while (true) {
+      username = await getInput('Enter username: ');
+      if (!username) {
+        console.log('Username is required.');
+        continue;
+      }
+
+      const [rows] = await connection.query('SELECT adminID FROM admin WHERE username = ?', [username]);
+      if (rows.length > 0) {
+        console.log('Username already exists. Please choose a different username.');
+      } else {
+        break; 
+      }
+    }
+
+    let password;
+    while (true) {
+      password = await getInput('Enter password: ');
+      if (password.length >= 8) break;
+      console.log('Password must be at least 8 characters long. Please try again.');
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Database connection
-    const connection = await mysql.createConnection({
-      host: process.env.DATABASE_HOST || 'localhost',  // Fallback to localhost if not set
-      user: process.env.DATABASE_USER || 'root',  // Fallback to 'root' if not set
-      password: process.env.DATABASE_PASSWORD || '', // Fallback to empty password if not set
-      database: process.env.DATABASE_NAME || 'bcd',  // Fallback to 'bcd' if not set
-    });
+    // Insert new admin
+    await connection.query(
+      'INSERT INTO admin (username, password) VALUES (?, ?)',
+      [username, hashedPassword]
+    );
 
-    // Insert into the database
-    await connection.query('INSERT INTO admin (username, password) VALUES (?, ?)', [username, hashedPassword]);
-    console.log(`Admin user ${username} created successfully!`);
+    console.log(`Admin user "${username}" created successfully!`);
 
-    // Close the database connection and readline
     await connection.end();
     rl.close();
   } catch (err) {
@@ -54,5 +70,5 @@ async function createAdmin() {
   }
 }
 
-// Run the create admin function
+// Run the script
 createAdmin();
