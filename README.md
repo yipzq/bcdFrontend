@@ -1,36 +1,139 @@
+# Blockchain RMT Project
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+---
 
-First, run the development server:
+## 📦 Installation
+
+Make sure you have [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/) installed.
+
+Install all required dependencies:
+
+```bash
+npm install
+```
+
+Install additional packages:
+
+```bash
+# Stripe integration
+npm install --save stripe @stripe/react-stripe-js @stripe/stripe-js
+
+# Database & Authentication
+npm install mysql2
+npm install jsonwebtoken
+npm install bcrypt
+
+# Blockchain
+npm install ethers@latest
+```
+
+---
+
+## 🧰 Tools to be downloaded 
+
+- [WAMP Server](https://sourceforge.net/projects/wampserver/)
+- [VC++ Redistributables](https://github.com/abbodi1406/vcredist/releases)
+  
+---
+
+## ⚙️ Environment Configuration
+
+Create a `.env.local` file in the root directory and add:
+
+```env
+# Stripe keys (replace with your own)
+NEXT_PUBLIC_STRIPE_PUBLIC_KEY=your_stripe_public_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+
+# Smart contract config
+NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS=your_contract_address
+OWNER_PRIVATE_KEY=your_owner_private_key
+RPC_URL=http://127.0.0.1:8545
+
+# Database connection
+DATABASE_HOST=localhost
+DATABASE_USER=root
+DATABASE_PASSWORD=
+DATABASE_NAME=bcd
+
+# App environment and JWT secret (replace any jwt secret key you preferred)
+NODE_ENV=development
+JWT_SECRET=your_jwt_secret_key
+
+# Stripe webhook secret (Guided below Stripe Webhook Integration)
+STRIPE_WEBHOOK_SECRET=your_webhook_signing_secret 
+```
+
+### How to get Smart Contract values:
+
+1. Start local Hardhat blockchain:
+   ```bash
+   npx hardhat node
+   ```
+   - Copy the first address and its private key.
+
+2. Deploy the contract:
+   ```bash
+   npm run deploy
+   ```
+   - Copy the deployed contract address.
+
+> ⚠️ The example Stripe keys are for testing only.  
+> 👉 [Create your own Stripe account](https://dashboard.stripe.com/register) to use your own keys.
+
+---
+
+## 🚀 Getting Started
+
+Once dependencies are installed and `.env.local` is set up:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧪 Admin Setup
 
-## Learn More
+1. Start WAMP server and go to phpMyAdmin.
+2. Import `bcd.sql`.
+3. Create an admin user via terminal:
+   ```bash
+   npm run create-admin
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+> Passwords are securely hashed. Remember the password you input for login.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 💳 Stripe Webhook Integration
 
-## Deploy on Vercel
+1. [Download Stripe CLI](https://stripe.com/docs/stripe-cli), unzip and run command prompt or open terminal in that folder.
+2. Run:
+   ```bash
+   stripe listen --forward-to localhost:3000/api/webhook
+   ```
+3. Paste the webhook secret into `STRIPE_WEBHOOK_SECRET=your_webhook_signing_secret` in `.env.local`. 
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+🎥 [YouTube Setup Guide](https://www.youtube.com/watch?v=1l4NMj-NTUE&t=616s)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> You must keep this terminal running to update balances.
+
+---
+
+## 📎 Included Files
+
+- `bcd.sql` – Database schema and sample data (Please import in WAMP)
+
+---
+
+## 📚 Resources
+
+- [Next.js Docs](https://nextjs.org/docs)
+- [Stripe API](https://stripe.com/docs)
+- [Hardhat Docs](https://hardhat.org/docs)
+- [WAMP](https://www.wampserver.com/en/)
