@@ -13,7 +13,7 @@ const DepositToken: React.FC = () => {
 
   // Parse as integer instead of float
   const depositAmount = parseInt(amount.trim()) || 0;
-  const processingFee = Math.floor(depositAmount * 0.05); // Use Math.floor to get whole number
+  const processingFee = depositAmount * 0.05;
   const totalAmount = depositAmount + processingFee;
 
   const validateInput = (value: string) => {
@@ -51,11 +51,16 @@ const DepositToken: React.FC = () => {
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    let value = e.target.value;
 
     // Only allow digits
-    if (value !== '' && !/^\d+$/.test(value)) {
+    if (value !== '' && !/^\d*$/.test(value)) {
       return;
+    }
+
+    // Limit to 6 digits
+    if (value.length > 6) {
+      value = value.slice(0, 6);
     }
 
     setAmount(value);
@@ -98,15 +103,21 @@ const DepositToken: React.FC = () => {
         <div className="bg-gray-800 p-4 rounded-lg mt-4">
           <div className="flex justify-between text-gray-400">
             <span>Deposit amount</span>
-            <span>{isNaN(depositAmount) ? '0' : depositAmount} USD</span>
+            <span>
+              {isNaN(depositAmount) ? '0.00' : depositAmount.toFixed(2)} USD
+            </span>
           </div>
           <div className="flex justify-between text-gray-400 mt-2">
             <span>Processing fee (5%)</span>
-            <span>{isNaN(processingFee) ? '0' : processingFee} USD</span>
+            <span>
+              {isNaN(processingFee) ? '0.00' : processingFee.toFixed(2)} USD
+            </span>
           </div>
           <div className="flex justify-between text-gray-200 mt-2 font-semibold">
             <span>Total amount to be paid</span>
-            <span>{isNaN(totalAmount) ? '0' : totalAmount} USD</span>
+            <span>
+              {isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)} USD
+            </span>
           </div>
         </div>
 

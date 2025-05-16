@@ -55,8 +55,8 @@ export default function Payment() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-gradient-to-tr from-blue-500 to-purple-500 p-6 rounded-lg shadow-md w-96">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-6 relative">
+      <div className="bg-gradient-to-tr from-blue-500 to-purple-500 p-6 rounded-lg shadow-md w-96 ">
         <Elements
           stripe={stripePromise}
           options={{
