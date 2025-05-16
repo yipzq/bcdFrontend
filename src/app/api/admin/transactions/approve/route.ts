@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
       //Need to add validations in withdrawal page, if user balance is less than amountUSD will not enter admin dashboard for approval.
-      if (user.balance < amountUSD) {
+      if (Number(user.balance) < Number(amountUSD)) {
         return NextResponse.json(
           { error: 'Insufficient balance' },
           { status: 400 }
