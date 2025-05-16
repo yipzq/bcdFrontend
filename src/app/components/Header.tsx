@@ -1,43 +1,3 @@
-// 'use client';
-// import Image from 'next/image';
-// import Link from 'next/link';
-// import { Connect } from './Connect';
-// import React, { useState, useEffect } from 'react';
-
-// export function Header() {
-//   const [usdBalance] = useState(0); // Set RMT to 0 for now
-//   const [rmtBalance] = useState(0); // Set RMT to 0 for now
-
-//   return (
-//     <nav className="flex justify-between items-center p-4 bg-gray-900 text-white w-full">
-//       <Link href="/">
-//         <Image src="/logo.png" alt="RMT Logo" width={40} height={35} />
-//       </Link>
-
-//       {/* Centered Navigation Links */}
-//       <div className="absolute left-1/2 transform -translate-x-1/2 flex space-x-6">
-//         <Link href="/">Home</Link>
-//         <Link href="/deposit">Deposit</Link>
-//         <Link href="/convert">Convert</Link>
-//         <Link href="/sendtoken">Send Token</Link>
-//         <Link href="/transaction">Transaction</Link>
-//         <Link href="/admin/login">Admin</Link>
-//       </div>
-
-//       <div className="flex items-center space-x-4">
-//         <div className="bg-gray-800 px-4 py-2 rounded-full shadow-md border border-gray-600 flex space-x-3 items-center">
-//           <span className="text-yellow-300 font-bold">
-//             USD {usdBalance.toFixed(2)}
-//           </span>
-//           <span className="text-purple-400 font-bold">
-//             RMT {rmtBalance.toFixed(2)}
-//           </span>
-//         </div>
-//         <Connect />
-//       </div>
-//     </nav>
-//   );
-// }
 
 'use client';
 import Image from 'next/image';
@@ -73,7 +33,6 @@ export function Header() {
   });
 
   const router = useRouter();
-  const didMount = useRef(false);
   const prevConnected = useRef(isConnected);
 
   const getConnectedWalletAddress = async () => {
@@ -100,31 +59,47 @@ export function Header() {
     }
   };
 
-  async function getPageData(address: string) {
-    const response = await fetch(`../api/useraccount?walletAddress=${address}`);
-    const res = await response.json();
-    setUsdBalance(res.useraccounts[0].balance);
-  }
-
-  useEffect(() => {
-    if (isConnected) {
-      if (address) {
-        setWalletAddress(address);
-        getPageData(address);
-        if (balanceData?.value) {
-          setTokenBalance(Number(balanceData.formatted));
-        }
-      }
-    } else if (prevConnected.current) {
-      // Only redirect if the user was previously connected and now is disconnected
-      setWalletAddress(null);
-      setTokenBalance(0);
+  // Update the function to accept an address parameter
+async function getPageData(walletAddress: string) {
+  try {
+    const response = await fetch(`../api/useraccount?walletAddress=${walletAddress}`);
+    if (!response.ok) {
+      console.error("API request failed with status:", response.status);
       setUsdBalance(0);
-      router.push('/');
+      return;
     }
-    prevConnected.current = isConnected;
-    // eslint-disable-next-line
-  }, [isConnected, address, balanceData]);
+    
+    const res = await response.json();
+    if (res.useraccounts && res.useraccounts.length > 0) {
+      setUsdBalance(res.useraccounts[0].balance);
+    } else {
+      setUsdBalance(0);
+    }
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    setUsdBalance(0);
+  }
+}
+
+useEffect(() => {
+  if (isConnected) {
+    if (address) {
+      setWalletAddress(address);
+      getPageData(address);
+      if (balanceData?.value) {
+        setTokenBalance(Number(balanceData.formatted));
+      }
+    }
+  } else if (prevConnected.current) {
+    // Only redirect if the user was previously connected and now is disconnected
+    setWalletAddress(null);
+    setTokenBalance(0);
+    setUsdBalance(0);
+    router.push('/');
+  }
+  prevConnected.current = isConnected;
+  // eslint-disable-next-line
+}, [isConnected, address, balanceData]);
 
   return (
     <nav className="flex justify-between items-center p-4 bg-gray-900 text-white w-full">
