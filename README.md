@@ -51,7 +51,7 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS=your_contract_address (npm run deploy)
 OWNER_PRIVATE_KEY=your_owner_private_key
 RPC_URL=http://127.0.0.1:8545
-# CONTRACT_OWNER_ADDRESS="contract owner address" (npx hardhat node and get the its private key)
+CONTRACT_OWNER_ADDRESS="contract owner address" (npx hardhat node and get the its private key)
 
 # Database connection
 DATABASE_HOST=localhost
