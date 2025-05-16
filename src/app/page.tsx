@@ -48,7 +48,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center w-full bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-purple-600 text-white py-16 px-6 text-center w-full">
+      <section className="bg-gradient-to-r from-purple-200 via-blue-100 to-green-100 text-gray-800 py-16 px-6 text-center w-full">
         <h1 className="text-5xl font-extrabold">
           Welcome to Remittance Token Platform
         </h1>
