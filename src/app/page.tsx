@@ -1,9 +1,9 @@
 //src/app/page.tsx
-
 'use client';
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';          
 import ExchangeRates from '@/app/components/ExchangeRates';
 
 const features = [
@@ -13,34 +13,43 @@ const features = [
       'Easily deposit USD into your account using Stripe. Your funds are secured and ready to convert anytime.',
     image: '/images/deposit.svg',
     bg: 'bg-purple-100',
+    path: '/deposit',                  
   },
+
   {
     title: 'Convert',
     description:
-      'Convert USD to platform tokens, enabling instant blockchain-ready currency.',
+      'Convert USD to platform tokens, enabling instant blockchain‑ready currency.',
     image: '/images/convert.svg',
     bg: 'bg-blue-100',
+    path: '/convert',                 
   },
+
   {
     title: 'Send Token',
     description:
       "Send tokens instantly by entering the recipient's wallet address and desired amount.",
     image: '/images/transfer.svg',
     bg: 'bg-green-100',
+    path: '/sendtoken',              
   },
+
   {
     title: 'Withdraw',
     description:
       'Easily withdraw your USD back to your bank account when you’re ready.',
     image: '/images/withdraw.svg',
     bg: 'bg-yellow-100',
+    path: '/withdraw',                 
   },
+
   {
     title: 'Transactions',
     description:
       'Track your entire transaction history using just your wallet address. Stay transparent and in control.',
     image: '/images/transactions.svg',
     bg: 'bg-pink-100',
+    path: '/transaction',            
   },
 ];
 
@@ -60,7 +69,7 @@ export default function Home() {
       </section>
 
       {/* About Us Section */}
-      <section className="py-12 px-6 w-full">
+      <section id="about-us" className="py-12 px-6 w-full">
         <div className="bg-white shadow-2xl rounded-3xl p-10 max-w-6xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-6">
             About Us
@@ -97,36 +106,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Platform Features */}
+     {/* Platform Features */}
       <section className="py-12 px-6 w-full">
         <div className="bg-white shadow-2xl rounded-3xl p-10 max-w-6xl mx-auto">
           <h2 className="text-4xl font-bold text-center text-gray-800 mb-10">
             Our Platform Features
           </h2>
+
           <div className="space-y-6">
             {features.map((feature, idx) => (
-              <div
+              <Link
+                href={feature.path}
                 key={idx}
-                className={`${feature.bg} rounded-2xl p-6 md:p-8 shadow-md flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10 transition-transform duration-300 transform hover:scale-105`}
+                className="block focus:outline-none"
               >
-                <div className="w-24 h-24 flex items-center justify-center bg-white rounded-full shadow">
-                  <Image
-                    src={feature.image}
-                    alt={feature.title}
-                    width={60}
-                    height={60}
-                    className="object-contain"
-                  />
+                <div
+                  className={`${feature.bg} rounded-2xl p-6 md:p-8 shadow-md flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10 transition-transform duration-300 transform hover:scale-105`}
+                >
+                  <div className="w-24 h-24 flex items-center justify-center bg-white rounded-full shadow">
+                    <Image
+                      src={feature.image}
+                      alt={feature.title}
+                      width={60}
+                      height={60}
+                      className="object-contain"
+                    />
+                  </div>
+                  <div className="text-center md:text-left">
+                    <h3 className="text-2xl font-semibold text-gray-800">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-2 text-lg text-gray-700 max-w-3xl">
+                      {feature.description}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-center md:text-left">
-                  <h3 className="text-2xl font-semibold text-gray-800">
-                    {feature.title}
-                  </h3>
-                  <p className="mt-2 text-lg text-gray-700 max-w-3xl">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -32,17 +32,14 @@ export default function ExchangeRates() {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let input = e.target.value;
 
-    // If the input is empty, reset to 0
     if (input === '') {
-      setAmount(0); // Set it to 0 instead of 1 to handle empty input
+      setAmount(0); 
     } else {
-      // Parse the number, and update the state
       const parsedAmount = parseFloat(input);
-
       if (!isNaN(parsedAmount)) {
         setAmount(parsedAmount);
       } else {
-        setAmount(0); // In case of invalid input, set to 0
+        setAmount(0);
       }
     }
   };
