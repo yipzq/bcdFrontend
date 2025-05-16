@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
       wallet
     );
 
-    // Calculate fee amount (fixed 1 RMT)
-    const feeAmount = ethers.parseUnits('1', 18);
+    // Calculate fee amount 
     const transferAmount = ethers.parseUnits(amount.toString(), 18);
+    const feeAmount = transferAmount * BigInt(1) / BigInt(100); // 1% fee
     const totalAmount = transferAmount + feeAmount;
 
     // Check if sender has enough tokens for transfer + fee

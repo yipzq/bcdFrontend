@@ -18,7 +18,7 @@ const SendToken: React.FC = () => {
 
   // Calculate processing fee 
   const parsedAmount = parseFloat(amount) || 0;
-  const processingFee = 1; // Fixed 1 RMT fee
+  const processingFee = parsedAmount * 0.01; // 1% fee
   const totalAmount = parsedAmount + processingFee;
 
   // Fetch token balance when component mounts or wallet changes
