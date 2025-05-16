@@ -22,24 +22,22 @@ const TokenConverter: React.FC = () => {
   const { isConnected, address } = useAccount();
 
   useEffect(() => {
-    const fetchBalances = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch('/api/balances');
-        const data = await response.json();
-        setBalanceUSD(Math.floor(data.usdBalance));
-        setBalanceRMT(Math.floor(data.rmtBalance));
-      } catch (error) {
-        console.error('Error fetching balances:', error);
-        setBalanceUSD(0);
-        setBalanceRMT(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchBalances = async () => {
+    setIsLoading(true);
+    try {
+      setBalanceUSD(Math.floor(usdBalance));
+      setBalanceRMT(Math.floor(tokenBalance));
+    } catch (error) {
+      console.error('Error setting balances:', error);
+      setBalanceUSD(0);
+      setBalanceRMT(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchBalances();
-  }, []);
+  fetchBalances();
+}, [usdBalance, tokenBalance]); // Add dependencies so it updates when these values change
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
