@@ -48,9 +48,10 @@ NEXT_PUBLIC_STRIPE_PUBLIC_KEY=your_stripe_public_key
 STRIPE_SECRET_KEY=your_stripe_secret_key
 
 # Smart contract config
-NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS=your_contract_address
+NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS=your_contract_address (npm run deploy)
 OWNER_PRIVATE_KEY=your_owner_private_key
 RPC_URL=http://127.0.0.1:8545
+# CONTRACT_OWNER_ADDRESS="contract owner address" (npx hardhat node and get the its private key)
 
 # Database connection
 DATABASE_HOST=localhost
@@ -64,6 +65,7 @@ JWT_SECRET=your_jwt_secret_key
 
 # Stripe webhook secret (Guided below Stripe Webhook Integration)
 STRIPE_WEBHOOK_SECRET=your_webhook_signing_secret 
+
 ```
 
 ### How to get Smart Contract values:
