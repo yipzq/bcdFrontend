@@ -18,7 +18,7 @@ export async function GET() {
             transactionDateTime AS date
           FROM transaction
           WHERE (type = '5')
-            AND (amountUSD >= 50000 OR amountToken >= 50000)
+            AND (amountUSD >= 10000 OR amountToken >= 10000)
           ORDER BY transactionDateTime DESC
         `,
     });

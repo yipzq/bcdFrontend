@@ -1,6 +1,5 @@
 // app/api/withdraw/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
 import { query } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
@@ -14,7 +13,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (amount < 5000) {
+  // Query the transaction table for pending transactions of this user
+  const result = await query({
+    query: 'SELECT * FROM transaction WHERE initiator = ? AND status = ?',
+    values: [address, 'Pending'],
+  });
+
+  if (result.length > 0) {
+    return NextResponse.json(
+      {
+        error:
+          'You have a pending transaction. Please wait for it to be approved or rejected before making another withdrawal.',
+      },
+      { status: 409 }
+    );
+  }
+
+  if (totalAmount < 10000) {
     const clientId = process.env.PAYPAL_CLIENT_ID!;
     const clientSecret = process.env.PAYPAL_CLIENT_SECRET!;
 
@@ -161,11 +176,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const reference = JSON.stringify({ email, amount });
+
     // Insert transaction record
     await query({
       query:
-        'INSERT INTO transaction (initiator, type, amountUSD, status, transactionDateTime) VALUES (?, ?, ?, ?, NOW())',
-      values: [address, 5, totalAmount, 'Pending'],
+        'INSERT INTO transaction (initiator, type, amountUSD, reference, status, transactionDateTime) VALUES (?, ?, ?, ?, ?, NOW())',
+      values: [address, 5, totalAmount, reference, 'Pending'],
     });
 
     return new Response(JSON.stringify({}), {
