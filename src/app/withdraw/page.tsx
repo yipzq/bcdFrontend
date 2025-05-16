@@ -5,23 +5,21 @@ import { useAccount } from 'wagmi';
 
 export default function WithdrawButton() {
   const [email, setEmail] = useState('');
-  const [amount, setAmount] = useState(''); // amount as string
+  const [amount, setAmount] = useState('');
   const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState(false); // NEW
   const { isConnected, address } = useAccount();
 
-  // Parse amount as float for calculations
   const numericAmount = parseFloat(amount) || 0;
   const calculatedFee = numericAmount * 0.03;
   const processingFee =
     numericAmount > 0 && calculatedFee < 1 ? 1 : calculatedFee;
   const totalAmount = numericAmount + processingFee;
 
-  // Validate email with simple regex
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Validate amount input (string)
   const validateInput = (value: string) => {
     if (!value) {
       setError('Please enter an amount.');
@@ -60,57 +58,61 @@ export default function WithdrawButton() {
     }
 
     setError('');
+    setLoading(true); // Start loading
 
-    const res = await fetch('/api/withdraw', {
-      method: 'POST',
-      body: JSON.stringify({
-        email,
-        amount: numericAmount,
-        totalAmount,
-        address,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+    try {
+      const res = await fetch('/api/withdraw', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          amount: numericAmount,
+          totalAmount,
+          address,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-    if (res.ok) {
-      alert(
-        'Withdrawal successful! Funds are being transferred to your PayPal account.'
-      );
-      window.location.reload();
-    } else {
-      const errorData = await res.json();
-      setError(errorData.error || 'Withdrawal failed.');
+      if (res.ok) {
+        if (Number(amount) < 10000) {
+          alert(
+            'Withdrawal successful! Funds are being transferred to your PayPal account.'
+          );
+          window.location.reload();
+        } else {
+          alert(
+            'Withdrawal request has been submitted. Funds above $10,000 need approval from the admin.'
+          );
+          setEmail('');
+          setAmount('');
+          setError('');
+        }
+      } else {
+        const errorData = await res.json();
+        setError(errorData.error || 'Withdrawal failed.');
+      }
+    } catch (err) {
+      setError('Something went wrong.');
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value;
 
-    // Allow digits and dots only, but keep at most one dot
-    // Remove all except digits and dots first
     val = val.replace(/[^0-9.]/g, '');
-
-    // If more than one dot, remove extras from right
     const firstDotIndex = val.indexOf('.');
     if (firstDotIndex !== -1) {
-      // Keep first dot, remove all others
       val =
         val.slice(0, firstDotIndex + 1) +
         val.slice(firstDotIndex + 1).replace(/\./g, '');
     }
 
-    // Split integer and decimal parts
     const parts = val.split('.');
-
-    // Remove leading zeros on integer part except single zero
     parts[0] = parts[0].replace(/^0+(?=\d)/, '');
-
-    // Limit integer part to 5 digits
     if (parts[0].length > 5) {
       parts[0] = parts[0].slice(0, 5);
     }
-
-    // Limit decimal part to max 2 digits if exists
     if (parts[1]) {
       parts[1] = parts[1].slice(0, 2);
       val = parts[0] + '.' + parts[1];
@@ -162,9 +164,13 @@ export default function WithdrawButton() {
         <button
           className="w-full bg-blue-600 py-2 rounded-lg text-lg font-semibold mt-4 disabled:opacity-50"
           onClick={handleWithdraw}
-          disabled={!isConnected || !!error || numericAmount <= 0}
+          disabled={!isConnected || numericAmount <= 0 || loading}
         >
-          {isConnected ? 'Withdraw' : 'Connect Wallet First'}
+          {loading
+            ? 'Processing...'
+            : isConnected
+            ? 'Withdraw'
+            : 'Connect Wallet First'}
         </button>
 
         {error && <p className="text-red-500 mt-2">{error}</p>}
