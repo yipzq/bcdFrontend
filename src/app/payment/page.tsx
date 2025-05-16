@@ -1,19 +1,3 @@
-// import React from 'react';
-
-// export default function Deposit() {
-//   return (
-//     <div className="flex flex-col items-center justify-center min-h-screen">
-//       <h1 className="text-2xl font-bold">Deposit</h1>
-//       <input
-//         className="w-64 p-2 mt-4 text-black rounded"
-//         type="number"
-//         placeholder="Enter amount"
-//       />
-//       <button className="w-64 bg-blue-500 mt-4 p-2 rounded">Pay</button>
-//     </div>
-//   );
-// }
-
 'use client';
 
 import React, { useState, useEffect } from 'react';

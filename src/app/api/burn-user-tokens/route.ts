@@ -47,6 +47,13 @@ export async function POST(request: NextRequest) {
       values: [newBalance, walletAddress],
     });
 
+    // Insert transaction record
+    await query({
+      query:
+        'INSERT INTO transaction (initiator, type, amountUSD, amountToken, status, transactionDateTime) VALUES (?, ?, ?, ?, ?, NOW())',
+      values: [walletAddress, 4, amount, amount, 'Completed'],
+    });
+
     return NextResponse.json(
       { success: true, message: 'Tokens burned and USD credited' },
       { status: 200 }

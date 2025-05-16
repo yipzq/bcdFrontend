@@ -56,6 +56,13 @@ export async function POST(request: NextRequest) {
     const tx = await contract.mintForUser(walletAddress, Number(amount));
     await tx.wait();
 
+    // Insert transaction record
+    await query({
+      query:
+        'INSERT INTO transaction (initiator, type, amountUSD, amountToken, status, transactionDateTime) VALUES (?, ?, ?, ?, ?, NOW())',
+      values: [walletAddress, 2, amount, amount, 'Completed'],
+    });
+
     return NextResponse.json(
       { success: true, message: 'Balance updated and tokens minted' },
       { status: 200 }

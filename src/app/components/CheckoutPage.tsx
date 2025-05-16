@@ -26,6 +26,7 @@ const CheckoutPage = ({ amount }: { amount: number }) => {
       body: JSON.stringify({
         amount: convertToSubcurrency(amount),
         walletAddress,
+        depositAmount: localStorage.getItem('depositAmount'),
       }),
     })
       .then((res) => res.json())
