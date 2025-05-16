@@ -28,8 +28,8 @@ export async function POST(req: Request) {
 
     const paidAmount = paymentIntent.amount;
     const walletAddress = paymentIntent.metadata?.walletAddress;
-
-    const depositAmount = paidAmount / 1.02 / 100;
+    const depositAmount = paymentIntent.metadata?.depositAmount;
+    const fee = paidAmount / 100 - Number(depositAmount);
 
     const checkSql = 'SELECT * FROM useraccount WHERE walletAddress = ?';
     const [existingUser] = await query({
@@ -38,12 +38,36 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      const newBalance =
-        Number(existingUser.balance) + Number(depositAmount.toFixed(2));
+      const newBalance = Number(existingUser.balance) + Number(depositAmount);
       await query({
         query: `UPDATE useraccount SET balance = ? WHERE walletAddress = ?`,
         values: [newBalance, walletAddress],
       });
+
+      // Insert transaction record
+      await query({
+        query:
+          'INSERT INTO transaction (initiator, type, amountUSD, status, transactionDateTime) VALUES (?, ?, ?, ?, NOW())',
+        values: [walletAddress, 1, depositAmount, 'Completed'],
+      });
+
+      const sql = 'SELECT total FROM fee';
+      const [currentFeeBalance] = await query({
+        query: sql,
+      });
+
+      if (!currentFeeBalance) {
+        await query({
+          query: `INSERT INTO fee (total) VALUES (?)`,
+          values: [fee],
+        });
+      } else {
+        const newFeeBalance = Number(currentFeeBalance.total) + Number(fee);
+        await query({
+          query: `UPDATE fee SET total = ?`,
+          values: [newFeeBalance],
+        });
+      }
     }
   }
 

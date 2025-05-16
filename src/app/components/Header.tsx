@@ -137,6 +137,7 @@ export function Header() {
         <Link href="/deposit">Deposit</Link>
         <Link href="/convert">Convert</Link>
         <Link href="/sendtoken">Send Token</Link>
+        <Link href="/withdraw">Withdraw</Link>
         <Link href="/transaction">Transaction</Link>
       </div>
 

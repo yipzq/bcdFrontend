@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import RemittanceToken from '@/abi/RemittanceToken.json';
 import { tokenContractAddress } from '@/utils/smartContractAddress';
+import { query } from '@/lib/db';
 
 const RPC_URL = process.env.RPC_URL || 'http://127.0.0.1:8545';
 const PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY as string;
@@ -9,15 +10,25 @@ const CONTRACT_ADDRESS = tokenContractAddress;
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, senderWalletAddress, recipientWalletAddress } = await request.json();
+    const { amount, senderWalletAddress, recipientWalletAddress } =
+      await request.json();
 
     // Validate inputs
     if (!amount || !senderWalletAddress || !recipientWalletAddress) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required parameters' },
+        { status: 400 }
+      );
     }
 
-    if (!ethers.isAddress(senderWalletAddress) || !ethers.isAddress(recipientWalletAddress)) {
-      return NextResponse.json({ error: 'Invalid wallet address format' }, { status: 400 });
+    if (
+      !ethers.isAddress(senderWalletAddress) ||
+      !ethers.isAddress(recipientWalletAddress)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid wallet address format' },
+        { status: 400 }
+      );
     }
 
     // Connect to blockchain
@@ -30,13 +41,13 @@ export async function POST(request: NextRequest) {
     );
 
     // Calculate fee amount (fixed 1 RMT)
-    const feeAmount = ethers.parseUnits("1", 18);
+    const feeAmount = ethers.parseUnits('1', 18);
     const transferAmount = ethers.parseUnits(amount.toString(), 18);
     const totalAmount = transferAmount + feeAmount;
 
     // Check if sender has enough tokens for transfer + fee
     const senderBalance = await contract.balanceOf(senderWalletAddress);
-    
+
     if (senderBalance < totalAmount) {
       return NextResponse.json(
         { error: 'Insufficient token balance including 1 RMT fee' },
@@ -45,7 +56,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. First transfer the fee to the contract owner
-    console.log(`Transferring 1 RMT fee from ${senderWalletAddress} to contract owner`);
+    console.log(
+      `Transferring 1 RMT fee from ${senderWalletAddress} to contract owner`
+    );
     const ownerAddress = process.env.CONTRACT_OWNER_ADDRESS;
     const feeTx = await contract.transferTokensFromBackend(
       senderWalletAddress,
@@ -53,9 +66,11 @@ export async function POST(request: NextRequest) {
       feeAmount
     );
     await feeTx.wait();
-    
+
     // 2. Then transfer the main amount to the recipient
-    console.log(`Transferring ${amount} RMT from ${senderWalletAddress} to ${recipientWalletAddress}`);
+    console.log(
+      `Transferring ${amount} RMT from ${senderWalletAddress} to ${recipientWalletAddress}`
+    );
     const transferTx = await contract.transferTokensFromBackend(
       senderWalletAddress,
       recipientWalletAddress,
@@ -63,11 +78,24 @@ export async function POST(request: NextRequest) {
     );
     await transferTx.wait();
 
+    // Insert transaction record
+    await query({
+      query:
+        'INSERT INTO transaction (initiator, type, amountToken, recipient, status, transactionDateTime) VALUES (?, ?, ?, ?, ?, NOW())',
+      values: [
+        senderWalletAddress,
+        3,
+        amount + 1,
+        recipientWalletAddress,
+        'Completed',
+      ],
+    });
+
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         message: `Successfully sent ${amount} RMT to ${recipientWalletAddress} (fee: 1 RMT)`,
-        txHash: transferTx.hash 
+        txHash: transferTx.hash,
       },
       { status: 200 }
     );
