@@ -70,6 +70,9 @@ DATABASE_NAME=bcd
 NODE_ENV=development
 JWT_SECRET=your_jwt_secret_key
 
+# Email notifications (Guided below Email Notifications with Resend)
+RESEND_API_KEY=your_resend_api_key
+
 # Stripe webhook secret (Guided below Stripe Webhook Integration)
 STRIPE_WEBHOOK_SECRET=your_webhook_signing_secret 
 ```
