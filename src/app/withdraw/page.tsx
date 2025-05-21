@@ -73,14 +73,14 @@ export default function WithdrawButton() {
       });
 
       if (res.ok) {
-        if (Number(amount) < 10000) {
+        if (Number(totalAmount) < 10000) {
           alert(
             'Withdrawal successful! Funds are being transferred to your PayPal account.'
           );
           window.location.reload();
         } else {
           alert(
-            'Withdrawal request has been submitted. Funds above $10,000 need approval from the admin.'
+            'Withdrawal request has been submitted. Withdrawals of $10,000 and above (including fee) need approval from the admin.'
           );
           setEmail('');
           setAmount('');
@@ -149,16 +149,16 @@ export default function WithdrawButton() {
         </div>
         <div className="bg-gray-800 p-4 rounded-lg mt-4">
           <div className="flex justify-between text-gray-400">
-            <span>Amount deducted from platform's account</span>
-            <span>{totalAmount.toFixed(2)} USD</span>
+            <span>Amount transferred to your PayPal account</span>
+            <span>{numericAmount.toFixed(2)} USD</span>
           </div>
           <div className="flex justify-between text-gray-400 mt-2">
             <span>Processing fee (3%)</span>
             <span>{processingFee.toFixed(2)} USD</span>
           </div>
           <div className="flex justify-between text-gray-200 mt-2 font-semibold">
-            <span>Amount transferred to your PayPal account</span>
-            <span>{numericAmount.toFixed(2)} USD</span>
+            <span>Amount deducted from platform's account</span>
+            <span>{totalAmount.toFixed(2)} USD</span>
           </div>
         </div>
         <button

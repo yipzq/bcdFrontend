@@ -30,6 +30,26 @@ export async function POST(req: NextRequest) {
   }
 
   if (totalAmount < 10000) {
+    // Check user balance
+    const data = await query({
+      query: `SELECT balance FROM useraccount WHERE walletAddress = ?`,
+      values: [address],
+    });
+
+    if (data.length === 0) {
+      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    }
+
+    const currentBalance = Number(data[0].balance);
+    const newBalance = currentBalance - Number(totalAmount);
+
+    if (newBalance < 0) {
+      return NextResponse.json(
+        { error: 'Insufficient USD balance' },
+        { status: 400 }
+      );
+    }
+
     const clientId = process.env.PAYPAL_CLIENT_ID!;
     const clientSecret = process.env.PAYPAL_CLIENT_SECRET!;
 
@@ -99,26 +119,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Failed to send payout', details: payoutData },
         { status: 500 }
-      );
-    }
-
-    // Check user balance
-    const data = await query({
-      query: `SELECT balance FROM useraccount WHERE walletAddress = ?`,
-      values: [address],
-    });
-
-    if (data.length === 0) {
-      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
-    }
-
-    const currentBalance = Number(data[0].balance);
-    const newBalance = currentBalance - Number(totalAmount);
-
-    if (newBalance < 0) {
-      return NextResponse.json(
-        { error: 'Insufficient USD balance' },
-        { status: 400 }
       );
     }
 
