@@ -25,6 +25,9 @@ npm install mysql2
 npm install jsonwebtoken
 npm install bcrypt
 
+# Email notifications
+npm install resend
+
 # Blockchain
 npm install ethers@latest
 ```
@@ -150,6 +153,24 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
    PAYPAL_CLIENT_SECRET=your-client-secret` in `.env.local`
 
 ---
+
+## 📧 Email Notifications with Resend
+This project uses Resend to send transactional emails (e.g., for withdrawal approvals and rejections).
+
+🔑 Get Your Resend API Key
+1. Go to [Resend.com](https://resend.com/)
+2. Sign up and log in
+3. Navigate to the **API Keys** tab
+4. Click **"Create API Key"**
+5. Copy the key and add it to your `.env.local` file:
+   
+```bash
+   RESEND_API_KEY=your_resend_api_key
+```
+   
+✅ You do not need to set up a custom domain for development testing.
+📬 Test emails will be delivered to the email address specified in your API request payload (e.g., paymentReference.email).
+
 
 ## 📎 Included Files
 
