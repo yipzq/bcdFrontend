@@ -18,7 +18,7 @@ export default function LayoutShell({
     <>
       {!hideHeader && <Header />}
       <main className="min-h-screen">{children}</main>
-      <Footer />
+      {!hideHeader && <Footer />}
     </>
   );
 }
