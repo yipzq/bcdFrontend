@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       wallet
     );
 
-    // Calculate fee amount 
+    // Calculate fee amount
     const transferAmount = ethers.parseUnits(amount.toString(), 18);
     const feeAmount = transferAmount * BigInt(1) / BigInt(100); // 1% fee
     const totalAmount = transferAmount + feeAmount;
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       values: [
         senderWalletAddress,
         3,
-        amount + 1,
+        (amount * 1.01).toFixed(2),
         recipientWalletAddress,
         'Completed',
       ],
